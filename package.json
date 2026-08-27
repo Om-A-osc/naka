@@ -1,0 +1,51 @@
+{
+  "name": "naka",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Merchant-side storefront MCP server for the Razorpay AI Buildathon (Track 01: AI Growth & Agentic Commerce)",
+  "type": "module",
+  "packageManager": "pnpm@10.14.0",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "db:migrate": "tsx --env-file-if-exists=.env packages/db/src/migrate.ts",
+    "seed": "tsx --env-file-if-exists=.env cli/naka.ts seed",
+    "server": "tsx --env-file-if-exists=.env apps/server/src/serve.ts",
+    "dev": "tsx --env-file-if-exists=.env watch apps/server/src/serve.ts",
+    "demo:replay": "tsx --env-file-if-exists=.env apps/buyer/src/replay.ts",
+    "demo:live": "tsx --env-file-if-exists=.env apps/buyer/src/live.ts",
+    "demo:live:openai": "tsx --env-file-if-exists=.env apps/buyer/src/live-openai.ts",
+    "demo:live:gemini": "tsx --env-file-if-exists=.env apps/buyer/src/live-gemini.ts",
+    "telegram:bot": "tsx --env-file-if-exists=.env apps/buyer/src/telegram-bot.ts",
+    "mcp": "tsx --env-file-if-exists=.env apps/buyer/src/mcp-server.ts",
+    "test:injection": "tsx --env-file-if-exists=.env apps/buyer/src/injection-test.ts",
+    "probe:orders": "node --env-file-if-exists=.env probes/orders_probe.mjs",
+    "probe:capability": "node --env-file-if-exists=.env probes/capability_probe.mjs",
+    "cli": "tsx --env-file-if-exists=.env cli/naka.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@naka/catalog": "workspace:*",
+    "@naka/db": "workspace:*",
+    "@naka/engine": "workspace:*",
+    "@naka/executor": "workspace:*",
+    "@naka/gate": "workspace:*",
+    "@naka/identity": "workspace:*",
+    "@naka/ledger": "workspace:*",
+    "@naka/mandate": "workspace:*",
+    "@naka/razorpay": "workspace:*",
+    "@naka/server": "workspace:*",
+    "@naka/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.2",
+    "tsx": "^4.19.2",
+    "vitest": "^2.1.8"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["better-sqlite3", "esbuild"]
+  }
+}

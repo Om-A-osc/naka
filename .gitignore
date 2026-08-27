@@ -1,0 +1,19 @@
+node_modules/
+dist/
+.env
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+data/*.local.json
+# Generated identities: Ed25519 private keys and the manifest that names them.
+# Never commit these, a public repo would hand every seeded agent's key to
+# the world. `pnpm seed` recreates them in seconds.
+data/agents/
+data/*.agents/
+data/seed-output.json
+data/*.seed-output.json
+data/*.db-*
+evaluation/runs/*
+!evaluation/runs/.gitkeep
+*.log
