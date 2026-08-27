@@ -1,0 +1,15 @@
+{
+  "name": "@naka/mandate",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@naka/db": "workspace:*",
+    "@naka/identity": "workspace:*",
+    "@naka/shared": "workspace:*",
+    "zod": "^3.24.1"
+  }
+}

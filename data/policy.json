@@ -1,0 +1,15 @@
+{
+  "max_per_checkout_paise": 300000,
+  "merchant_approval_over_paise": 250000,
+  "per_agent_daily_cap_paise": 1000000,
+  "max_qty_per_line": 5,
+  "max_payment_attempts": 3,
+  "reservation_ttl_seconds": 600,
+  "reservation_extend_seconds": 300,
+  "addon_max_price_share": 0.5,
+  "kill_switch": false,
+  "escalation_approval_ttl_seconds": 3600,
+  "refund_approval_ttl_seconds": 3600,
+  "dashboard_offer_id": null,
+  "dashboard_offer_expected_discount_paise": 0
+}
