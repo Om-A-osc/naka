@@ -1,0 +1,20 @@
+{
+  "name": "@naka/engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@naka/catalog": "workspace:*",
+    "@naka/db": "workspace:*",
+    "@naka/gate": "workspace:*",
+    "@naka/identity": "workspace:*",
+    "@naka/ledger": "workspace:*",
+    "@naka/mandate": "workspace:*",
+    "@naka/razorpay": "workspace:*",
+    "@naka/shared": "workspace:*",
+    "zod": "^3.24.1"
+  }
+}
