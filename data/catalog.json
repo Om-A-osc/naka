@@ -1,0 +1,133 @@
+{
+  "merchant": {
+    "id": "kk_roasters",
+    "name": "kk_roasters",
+    "display_name": "Kaapi Kottai Roasters",
+    "currency": "INR"
+  },
+  "products": [
+    {
+      "id": "prod_fc8020",
+      "title": "South Indian Filter Coffee 80:20",
+      "description": "Our classic blend: 80% arabica and robusta beans, 20% chicory root, roasted and ground fresh every week for a strong, full-bodied filter coffee.",
+      "category": "coffee",
+      "variants": [
+        { "id": "var_fc8020_250", "title": "250 g", "sku": "FC8020-250", "price_paise": 34900, "stock_qty": 40, "aliases": ["filter kaapi", "kaapi podi", "filter coffee powder"] },
+        { "id": "var_fc8020_500", "title": "500 g", "sku": "FC8020-500", "price_paise": 64900, "stock_qty": 25, "aliases": ["filter kaapi 500g", "500 gram filter coffee"] }
+      ]
+    },
+    {
+      "id": "prod_arabica_pure",
+      "title": "Pure Arabica (Chicory-Free)",
+      "description": "100% single-origin arabica beans, no chicory. A smoother, less bitter cup for filter or pour-over.",
+      "category": "coffee",
+      "variants": [
+        { "id": "var_arabica_250", "title": "250 g", "sku": "ARB100-250", "price_paise": 42900, "stock_qty": 18, "aliases": ["chicory kam", "chicory free", "pure arabica", "bina chicory"] }
+      ]
+    },
+    {
+      "id": "prod_peaberry",
+      "title": "Peaberry Coffee",
+      "description": "Rare peaberry beans (one round bean per cherry instead of the usual two), prized for a brighter, more concentrated flavour.",
+      "category": "coffee",
+      "variants": [
+        { "id": "var_peaberry_250", "title": "250 g", "sku": "PB-250", "price_paise": 49900, "stock_qty": 12, "aliases": ["peaberry", "peaberry coffee"] },
+        { "id": "var_peaberry_500", "title": "500 g", "sku": "PB-500", "price_paise": 89900, "stock_qty": 0, "aliases": ["peaberry 500g"] }
+      ]
+    },
+    {
+      "id": "prod_coldbrew_bags",
+      "title": "Cold Brew Coffee Bags",
+      "description": "10 pre-measured cold brew bags. Steep overnight in cold water for a smooth, low-acid brew.",
+      "category": "coffee",
+      "variants": [
+        { "id": "var_coldbrew_10", "title": "Pack of 10", "sku": "CB-10", "price_paise": 39900, "stock_qty": 30, "aliases": ["cold brew", "cold brew bags"] }
+      ]
+    },
+    {
+      "id": "prod_chicory_blend_9010",
+      "title": "Coffee-Chicory Blend 90:10",
+      "description": "A lighter chicory blend than our classic 80:20, for those who want just a touch of chicory character.",
+      "category": "coffee",
+      "variants": [
+        { "id": "var_blend9010_250", "title": "250 g", "sku": "BL9010-250", "price_paise": 37900, "stock_qty": 22, "aliases": ["halka chicory", "light chicory blend"] },
+        { "id": "var_blend9010_500", "title": "500 g", "sku": "BL9010-500", "price_paise": 69900, "stock_qty": 15, "aliases": ["blend 500g"] }
+      ]
+    },
+    {
+      "id": "prod_jaggery_sugar",
+      "title": "Organic Jaggery Sugar",
+      "description": "Unrefined jaggery sugar, a traditional sweetener for filter coffee.",
+      "category": "grocery",
+      "variants": [
+        { "id": "var_jaggery_500", "title": "500 g", "sku": "JAG-500", "price_paise": 19900, "stock_qty": 50, "aliases": ["jaggery", "vellam", "gur"] }
+      ]
+    },
+    {
+      "id": "prod_steel_filter_2cup",
+      "title": "Stainless Steel Filter Coffee Maker",
+      "description": "Traditional South Indian steel filter with tumbler and davara. Compact 2-cup size.",
+      "category": "brewing",
+      "variants": [
+        { "id": "var_filter_2cup", "title": "2-cup", "sku": "SF-2C", "price_paise": 54900, "stock_qty": 1, "aliases": ["steel filter", "coffee filter", "davara set"] }
+      ]
+    },
+    {
+      "id": "prod_steel_filter_4cup",
+      "title": "Stainless Steel Filter Coffee Maker",
+      "description": "Traditional South Indian steel filter, larger 4-cup size for families.",
+      "category": "brewing",
+      "variants": [
+        { "id": "var_filter_4cup", "title": "4-cup", "sku": "SF-4C", "price_paise": 74900, "stock_qty": 14, "aliases": ["big steel filter", "4 cup filter"] }
+      ]
+    },
+    {
+      "id": "prod_davara_set",
+      "title": "Brass Davara-Tumbler Set",
+      "description": "Handcrafted brass tumbler and davara set for the authentic filter coffee experience.",
+      "category": "brewing",
+      "variants": [
+        { "id": "var_davara_brass", "title": "Brass set", "sku": "DAV-BR", "price_paise": 129900, "stock_qty": 10, "aliases": ["brass davara", "davara tumbler"] }
+      ]
+    },
+    {
+      "id": "prod_tumbler_pair",
+      "title": "Stainless Steel Tumbler Pair",
+      "description": "A pair of stainless steel tumblers for serving filter coffee.",
+      "category": "brewing",
+      "variants": [
+        { "id": "var_tumbler_pair", "title": "Pair", "sku": "TUM-2", "price_paise": 69900, "stock_qty": 20, "aliases": ["tumbler pair", "steel tumbler"] }
+      ]
+    },
+    {
+      "id": "prod_gift_box",
+      "title": "Filter Coffee Gift Box",
+      "description": "A gift box housing for a coffee and accessory bundle. Pair it with a coffee pack for a complete gift.",
+      "category": "brewing",
+      "variants": [
+        { "id": "var_gift_box", "title": "Standard", "sku": "GIFT-STD", "price_paise": 249900, "stock_qty": 8, "aliases": ["gift box", "gift set"] }
+      ]
+    },
+    {
+      "id": "prod_starter_kit",
+      "title": "Complete Brewing Starter Kit",
+      "description": "Everything a first-time filter coffee brewer needs: steel filter, tumbler-davara set, and a welcome pack of coffee.",
+      "category": "brewing",
+      "variants": [
+        { "id": "var_starter_kit", "title": "Complete kit", "sku": "KIT-FULL", "price_paise": 499900, "stock_qty": 6, "aliases": ["starter kit", "beginner kit"] }
+      ]
+    }
+  ],
+  "frequently_bought_with": [
+    { "variant_id": "var_fc8020_500", "addon_variant_id": "var_filter_2cup", "weight": 1.0 },
+    { "variant_id": "var_fc8020_250", "addon_variant_id": "var_filter_2cup", "weight": 0.8 },
+    { "variant_id": "var_filter_2cup", "addon_variant_id": "var_davara_brass", "weight": 0.9 },
+    { "variant_id": "var_filter_4cup", "addon_variant_id": "var_davara_brass", "weight": 0.9 },
+    { "variant_id": "var_fc8020_500", "addon_variant_id": "var_jaggery_500", "weight": 0.5 },
+    { "variant_id": "var_arabica_250", "addon_variant_id": "var_tumbler_pair", "weight": 0.4 },
+    { "variant_id": "var_blend9010_250", "addon_variant_id": "var_filter_2cup", "weight": 0.6 }
+  ],
+  "coupons": [
+    { "code": "FIRST10", "pct": 10, "max_paise": 20000, "min_order_paise": 50000 }
+  ]
+}
