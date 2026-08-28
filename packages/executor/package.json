@@ -1,0 +1,17 @@
+{
+  "name": "@naka/executor",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@naka/db": "workspace:*",
+    "@naka/engine": "workspace:*",
+    "@naka/gate": "workspace:*",
+    "@naka/ledger": "workspace:*",
+    "@naka/razorpay": "workspace:*",
+    "@naka/shared": "workspace:*"
+  }
+}
