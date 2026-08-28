@@ -1,0 +1,16 @@
+{
+  "name": "@naka/buyer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.1",
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@naka/channels": "workspace:*",
+    "@naka/identity": "workspace:*",
+    "@naka/server": "workspace:*",
+    "@naka/shared": "workspace:*",
+    "openai": "^4.77.0",
+    "zod": "^3.24.1"
+  }
+}
