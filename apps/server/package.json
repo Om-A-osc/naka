@@ -1,0 +1,27 @@
+{
+  "name": "@naka/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./reconcile": "./src/reconcile/poller.ts",
+    "./fault-flags": "./src/jobs/fault-flags.ts"
+  },
+  "dependencies": {
+    "@naka/catalog": "workspace:*",
+    "@naka/channels": "workspace:*",
+    "@naka/db": "workspace:*",
+    "@naka/engine": "workspace:*",
+    "@naka/executor": "workspace:*",
+    "@naka/gate": "workspace:*",
+    "@naka/identity": "workspace:*",
+    "@naka/ledger": "workspace:*",
+    "@naka/mandate": "workspace:*",
+    "@naka/razorpay": "workspace:*",
+    "@naka/shared": "workspace:*",
+    "fastify": "^5.2.0",
+    "@fastify/cookie": "^11.0.2",
+    "zod": "^3.24.1"
+  }
+}
