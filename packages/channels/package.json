@@ -1,0 +1,14 @@
+{
+  "name": "@naka/channels",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@naka/identity": "workspace:*",
+    "@naka/shared": "workspace:*",
+    "openai": "^4.77.0"
+  }
+}
