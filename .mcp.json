@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "naka": {
+      "command": "node",
+      "args": ["node_modules/tsx/dist/cli.mjs", "apps/buyer/src/mcp-server.ts"],
+      "env": {
+        "NAKA_URL": "http://127.0.0.1:3000"
+      }
+    }
+  }
+}
