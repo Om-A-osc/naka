@@ -1,0 +1,15 @@
+**/node_modules
+**/.env
+**/.env.*
+data/*.db
+data/*.db-*
+data/agents/
+data/*.agents/
+data/seed-output.json
+data/*.seed-output.json
+evaluation/runs/
+*.md
+!README.md
+!docs/*.md
+.git
+.mcp.json

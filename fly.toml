@@ -1,0 +1,30 @@
+# Fly.io. `fly launch --copy-config --no-deploy`, then `fly volumes create naka_data --size 1`,
+# `fly secrets set ...` for the values in naka/docs/DEPLOY.md, then `fly deploy`.
+app = "naka"
+primary_region = "sin"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  NAKA_DB = "/data/naka.db"
+  PORT = "3000"
+  RAZORPAY_MODE = "real"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "20s"
+    method = "GET"
+    path = "/health"
+
+[[mounts]]
+  source = "naka_data"
+  destination = "/data"

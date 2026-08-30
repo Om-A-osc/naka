@@ -1,0 +1,37 @@
+# Render blueprint. Note: a persistent disk needs a paid plan on Render;
+# Railway or Fly give SQLite a volume on cheaper tiers (see naka/docs/DEPLOY.md).
+services:
+  - type: web
+    name: naka
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: starter
+    healthCheckPath: /health
+    disk:
+      name: naka-data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: NAKA_DB
+        value: /data/naka.db
+      - key: PORT
+        value: "3000"
+      - key: RAZORPAY_MODE
+        value: real
+      - key: NAKA_BASE_URL
+        sync: false # https://<your-service>.onrender.com, set after the first deploy
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RZP_WEBHOOK_SECRET
+        sync: false
+      - key: CONSOLE_PASSWORD
+        sync: false
+      - key: LEDGER_SALT
+        generateValue: true
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_MERCHANT_CHAT_ID
+        sync: false
