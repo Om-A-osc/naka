@@ -5,8 +5,7 @@ Buildathon (Track 01: AI Growth & Agentic Commerce). Every money action
 passes a deterministic policy gate, executes exactly once on Razorpay
 test-mode Orders after a server-verified human confirmation, is confirmed
 only by verified webhooks or reconciliation, and lands in a hash-chained,
-append-only ledger. The full design document is kept outside this repository; this is its
-implementation.
+append-only ledger.
 
 ## Quickstart (no API keys needed)
 
@@ -131,18 +130,12 @@ pnpm demo:live
 
 ## Where things live
 
-The design document (not in this repository) describes the intended structure; `docs/
-limitations.md` in this folder is the honest diff between that design and
-what's actually implemented, read it before evaluating this build.
-
-## Where we did NOT use an LLM
-
-Pricing, discounts, totals, the policy decision (`ALLOW`/`DENY`/
-`NEEDS_HUMAN` with rule ids), human confirmation, merchant escalation
-approval, payment truth (webhooks/reconciliation only), payment-failure
-classification, refund eligibility, the ledger, agent authentication, and
-mandate validation are all deterministic code with no model in the loop,
-see `packages/gate`, `packages/engine`, `packages/executor`. The only LLM
-in the system is the buyer's own assistant (`apps/buyer/src/live.ts`),
-which can only search, propose, and relay, it holds no Razorpay
-credentials and has no tool that moves money directly.
+```
+apps/server     Fastify server: signed tool routes, pay page, webhooks, reconciler, console, onboarding
+apps/buyer      buyer agents: replay (no LLM), Claude/OpenAI/Gemini buyers, Telegram bot CLI, MCP server
+packages/       catalog · channels · db · engine · executor · gate · identity · ledger · mandate · razorpay · shared
+cli/            naka CLI (seed, catalog, agents, ledger, merchant decisions)
+data/           catalog.json and policy.json for the demo merchant
+tests/          end-to-end and isolation tests (vitest)
+docs/           DEPLOY.md
+```

@@ -82,8 +82,6 @@ fly deploy
   environment, the default merchant adopts it on first boot. The
   standalone `pnpm telegram:bot` is only for running a bot by hand against
   a token the server is *not* hosting.
-- **ChatGPT:** not supported yet, it needs a remote MCP endpoint over HTTP
-  with bearer auth, which this build does not expose.
 
 ## Pre-push checklist
 

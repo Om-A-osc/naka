@@ -88,7 +88,7 @@ function manifest(db: Db, merchantId: string) {
   return {
     name: "naka",
     merchant: { id: merchantId, display_name: merchantDisplayName(db, merchantId) },
-    description: "Merchant-side storefront for AI buyer agents (UCP-shaped, non-conformant). See docs/limitations.md.",
+    description: "Merchant-side storefront for AI buyer agents (UCP-shaped, non-conformant).",
     tools: [
       "search_catalog", "get_product", "create_checkout", "get_checkout",
       "update_checkout", "suggest_addons", "complete_checkout", "cancel_checkout",
