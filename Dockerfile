@@ -20,7 +20,8 @@ ENV NODE_ENV=production \
     NAKA_DB=/data/naka.db \
     PORT=3000
 EXPOSE 3000
-VOLUME ["/data"]
+# No VOLUME directive: Railway rejects it and mounts a Railway Volume at /data
+# from its UI instead (Fly and Render do the same through their configs).
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s \
   CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
