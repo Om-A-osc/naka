@@ -17,11 +17,11 @@ COPY . .
 RUN pnpm install --frozen-lockfile
 
 ENV NODE_ENV=production \
-    NAKA_DB=/data/naka.db \
     PORT=3000
 EXPOSE 3000
-# No VOLUME directive: Railway rejects it and mounts a Railway Volume at /data
-# from its UI instead (Fly and Render do the same through their configs).
+# No VOLUME directive (Railway rejects it). Attach a volume from the platform;
+# the server stores its SQLite file under RAILWAY_VOLUME_MOUNT_PATH when that is
+# set, or wherever NAKA_DB points (Fly/Render configs set it to /data/naka.db).
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s \
   CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"

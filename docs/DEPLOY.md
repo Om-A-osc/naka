@@ -14,7 +14,7 @@ paid plans.
 
 | Variable | Required | Notes |
 |---|---|---|
-| `NAKA_DB` | yes | `/data/naka.db` (already set in the image and configs) |
+| `NAKA_DB` | on Fly/Render | path of the SQLite file. On Railway leave it unset: the server uses the attached volume automatically (`RAILWAY_VOLUME_MOUNT_PATH`) |
 | `PORT` | set by platform | the image listens on it; `NAKA_PORT` overrides locally only |
 | `NAKA_BASE_URL` | yes | the public `https://` URL. Used in every pay link and onboarding kit. Set it after the platform assigns a domain, then redeploy once |
 | `RAZORPAY_MODE` | yes | `real` for the default merchant to use the keys below; `recorded` to simulate payments |
@@ -33,7 +33,9 @@ through `/onboard`; those are stored on their row, not in env.
 1. Push this repository to GitHub (see the pre-push checklist below).
 2. Railway → New Project → Deploy from GitHub repo. It detects the
    `Dockerfile` at the root.
-3. Service → Volumes → Add volume, mount path `/data`.
+3. Service → Volumes → Add volume. Any mount path works (`/data` is fine);
+   the server detects it through `RAILWAY_VOLUME_MOUNT_PATH` and keeps the
+   database there. Do not set `NAKA_DB` on Railway.
 4. Service → Variables: add the table above. Leave `NAKA_BASE_URL` for step 6.
 5. Service → Settings → Networking → Generate domain.
 6. Set `NAKA_BASE_URL=https://<that domain>` and redeploy.

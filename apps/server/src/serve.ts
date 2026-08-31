@@ -1,5 +1,5 @@
 /** The standalone server entry point. */
-import { getDb } from "@naka/db";
+import { getDb, resolveDbPath } from "@naka/db";
 import { buildServer } from "./index.js";
 import { env } from "./config/env.js";
 
@@ -16,7 +16,7 @@ async function main() {
   await seedIfEmpty();
   const { app, telegram } = await buildServer();
   await app.listen({ port: env.port, host: "0.0.0.0" });
-  app.log.info(`naka listening on ${env.baseUrl} (mode=${env.mode}, merchant=${env.merchantId})`);
+  app.log.info(`naka listening on ${env.baseUrl} (mode=${env.mode}, merchant=${env.merchantId}, db=${resolveDbPath()})`);
   // The operator-level TELEGRAM_BOT_TOKEN in `.env` predates hosted bots.
   if (env.telegramBotToken && !telegram.status(env.merchantId).connected) {
     try {

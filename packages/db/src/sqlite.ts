@@ -1,5 +1,5 @@
 import Database from "better-sqlite3";
-import { readFileSync } from "node:fs";
+import { readFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -42,10 +42,18 @@ function ensureMerchantColumns(db: Database.Database): void {
   }
 }
 
-/** Process-wide singleton, opened from NAKA_DB (default ./data/naka.db). */
+/** Where the SQLite file lives. */
+export function resolveDbPath(): string {
+  if (process.env.NAKA_DB) return process.env.NAKA_DB;
+  if (process.env.RAILWAY_VOLUME_MOUNT_PATH) return join(process.env.RAILWAY_VOLUME_MOUNT_PATH, "naka.db");
+  return "./data/naka.db";
+}
+
+/** Process-wide singleton, opened from resolveDbPath(). */
 export function getDb(): Database.Database {
   if (!singleton) {
-    const path = process.env.NAKA_DB ?? "./data/naka.db";
+    const path = resolveDbPath();
+    mkdirSync(dirname(path), { recursive: true }); // a fresh volume is an empty directory
     singleton = openDb(path);
     migrate(singleton);
   }

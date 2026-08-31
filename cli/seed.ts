@@ -1,5 +1,5 @@
 import { mkdirSync, writeFileSync, readFileSync } from "node:fs";
-import type { Db } from "@naka/db";
+import { resolveDbPath, type Db } from "@naka/db";
 import { importCatalogFromFile, type CatalogFile } from "@naka/catalog";
 import { generateEd25519KeyPair, registerAgent, setAgentStatus } from "@naka/identity";
 import { issueMandate } from "@naka/mandate";
@@ -7,7 +7,7 @@ import { ensureLinkBudget } from "@naka/executor";
 
 /** Where the generated agent keys and the seed manifest go. */
 function seedPaths(): { dir: string; output: string } {
-  const dbPath = (process.env.NAKA_DB ?? "./data/naka.db").replace(/\\/g, "/");
+  const dbPath = resolveDbPath().replace(/\\/g, "/");
   // Only the checked-in default keeps the historical paths.
   if (dbPath === "./data/naka.db" || dbPath === "data/naka.db") return { dir: "data/agents", output: "data/seed-output.json" };
   const base = dbPath.replace(/\.db$/, "");
