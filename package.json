@@ -18,8 +18,6 @@
     "telegram:bot": "tsx --env-file-if-exists=.env apps/buyer/src/telegram-bot.ts",
     "mcp": "tsx --env-file-if-exists=.env apps/buyer/src/mcp-server.ts",
     "test:injection": "tsx --env-file-if-exists=.env apps/buyer/src/injection-test.ts",
-    "probe:orders": "node --env-file-if-exists=.env probes/orders_probe.mjs",
-    "probe:capability": "node --env-file-if-exists=.env probes/capability_probe.mjs",
     "cli": "tsx --env-file-if-exists=.env cli/naka.ts",
     "test": "vitest run",
     "test:watch": "vitest",
