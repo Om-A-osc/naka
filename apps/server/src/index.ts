@@ -17,6 +17,7 @@ import { startReconcileLoop } from "./reconcile/poller.js";
 import { env } from "./config/env.js";
 import { Tenants } from "./tenants.js";
 import { TelegramHost } from "./channels/telegram-host.js";
+import { BASE_CSS, nav } from "./web/ui.js";
 
 export async function buildServer() {
   const db = getDb();
@@ -32,6 +33,12 @@ export async function buildServer() {
   await app.register(cookie);
 
   // A tool argument that fails schema validation is the caller's mistake, not ours.
+  app.setNotFoundHandler((req, reply) => {
+    const wantsHtml = (req.headers.accept ?? "").includes("text/html");
+    if (!wantsHtml) return reply.code(404).send({ error: { code: "NOT_FOUND", message: `Route ${req.method}:${req.url} not found` } });
+    return reply.code(404).type("text/html").send(notFoundPage());
+  });
+
   app.setErrorHandler((err: any, _req, reply) => {
     if (err instanceof ZodError) {
       const detail = err.issues.map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`).join("; ");
@@ -86,10 +93,20 @@ export async function buildServer() {
   };
 }
 
+function notFoundPage(): string {
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Not found, Naka</title>
+<style>${BASE_CSS}body{margin:0;font-family:system-ui,sans-serif;background:var(--bg);color:var(--ink)}.wrap{max-width:560px;margin:80px auto;padding:0 20px;text-align:center;animation:nk-fade-up .5s}h1{font-size:4em;margin:0;letter-spacing:-.04em;background:linear-gradient(120deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}p{color:var(--muted)}a.b{display:inline-block;margin:6px;padding:9px 14px;border-radius:8px;background:var(--accent);color:#fff;text-decoration:none;font-weight:600}a.g{background:#fff;color:var(--accent);border:1px solid var(--accent)}</style></head>
+<body>${nav("")}<div class="wrap"><h1>404</h1><p>There is nothing at this address. The shop, the console and onboarding are all one click away.</p><a class="b" href="/">Home</a><a class="b g" href="/shop">Demo shop</a><a class="b g" href="/console">Console</a></div></body></html>`;
+}
+
 function manifest(db: Db, merchantId: string) {
+  const base = env.baseUrl.replace(/\/$/, "");
+  const tg = db.prepare("SELECT telegram_bot_username FROM merchants WHERE id = ?").get(merchantId) as { telegram_bot_username: string | null } | undefined;
   return {
     name: "naka",
     merchant: { id: merchantId, display_name: merchantDisplayName(db, merchantId) },
+    storefront_url: `${base}/shop/${merchantId}`,
+    channels: { telegram: tg?.telegram_bot_username ? `https://t.me/${tg.telegram_bot_username}` : null },
     description: "Merchant-side storefront for AI buyer agents (UCP-shaped, non-conformant).",
     tools: [
       "search_catalog", "get_product", "create_checkout", "get_checkout",

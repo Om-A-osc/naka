@@ -474,6 +474,7 @@ function dashboardPage(): string {
   .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:0 0 18px}
   .stat{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px}.stat .l{color:var(--muted);font-size:.8em;text-transform:uppercase;letter-spacing:.04em}.stat b{display:block;font-size:1.55em;margin:4px 0 2px;letter-spacing:-.01em}.stat .sub{color:var(--muted);font-size:.8em}
   .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:0 0 16px}.card h3{margin:0 0 10px;font-size:1.02em;display:flex;justify-content:space-between;align-items:center;gap:10px}
+  aside .who .ext{display:block;margin-top:6px;font-size:.8em;color:var(--accent);padding:0;border:none;background:none}
   .two{display:grid;grid-template-columns:1.4fr 1fr;gap:16px}@media(max-width:1000px){.two{grid-template-columns:1fr}.app{grid-template-columns:1fr}aside{display:flex;flex-wrap:wrap;gap:4px;border-right:none;border-bottom:1px solid var(--line)}aside .who{display:none}}
   table{width:100%;border-collapse:collapse}td,th{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left;font-size:.9em;vertical-align:top}th{color:var(--muted);font-weight:600;font-size:.76em;text-transform:uppercase;letter-spacing:.04em}tr:last-child td{border-bottom:none}
   code,.id{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.84em}.id{color:#556}
@@ -499,7 +500,7 @@ function dashboardPage(): string {
   </style></head><body>${nav("console")}
   <div class="app">
   <aside>
-    <div class="who"><b id="sName">…</b><span id="sId"></span></div>
+    <div class="who"><b id="sName">…</b><span id="sId"></span><a id="sShop" class="ext" href="/shop" target="_blank" rel="noopener">Open storefront ↗</a></div>
     <a href="#overview" data-p="overview">Overview</a>
     <a href="#orders" data-p="orders">Orders</a>
     <a href="#approvals" data-p="approvals">Approvals <span class="n" id="nEsc"></span></a>
@@ -618,7 +619,7 @@ function dashboardPage(): string {
 
     async function refresh() {
       const s = await j('/api/console/stats'); if (!s.merchant) return;
-      document.getElementById('sName').textContent = s.merchant.display_name; document.getElementById('sId').textContent = s.merchant.id;
+      document.getElementById('sName').textContent = s.merchant.display_name; document.getElementById('sId').textContent = s.merchant.id; document.getElementById('sShop').href = '/shop/' + encodeURIComponent(s.merchant.id);
       const mode = document.getElementById('mode'); mode.textContent = s.merchant.mode === 'real' ? 'Razorpay test mode' : 'simulated payments'; mode.className = 'badge ' + s.merchant.mode;
       document.getElementById('clock').textContent = 'updated ' + new Date().toLocaleTimeString('en-IN');
       document.getElementById('kill').style.display = s.policy.kill_switch ? 'block' : 'none';
@@ -642,7 +643,7 @@ function dashboardPage(): string {
       const e = await j('/api/console/escalations');
       const escHtml = e.escalations.length ? e.escalations.map(x =>
         '<div style="padding:10px 0;border-bottom:1px solid var(--line)"><b>' + rs(x.total_paise) + '</b> · <span class="id">' + esc(x.checkout_id) + '</span> · <span class="muted">' + when(x.created_at) + '</span><br><span class="muted">' + esc(x.explanation) + '</span><br>' +
-        '<button class="sm" onclick="approve(\\''+x.checkout_id+'\\')">Approve</button><button class="ghost sm" onclick="deny(\\''+x.checkout_id+'\\')">Deny</button></div>').join('') : '<p class="empty">Nothing waiting on you.</p>';
+        '<button class="sm" onclick="approve(\\''+x.checkout_id+'\\')">Approve</button><button class="ghost sm" onclick="deny(\\''+x.checkout_id+'\\')">Deny</button><button class="ghost sm" onclick="openOrder(\\''+x.checkout_id+'\\')">Why?, see the rules</button></div>').join('') : '<p class="empty">Nothing waiting on you.</p>';
       document.getElementById('escalations').innerHTML = escHtml;
       const rf = await j('/api/console/refunds');
       document.getElementById('needs').innerHTML = (e.escalations.length || s.refunds_pending) ? escHtml + (s.refunds_pending ? '<p><a href="#refunds">' + s.refunds_pending + ' refund' + (s.refunds_pending === 1 ? '' : 's') + ' waiting for approval →</a></p>' : '') : '<p class="empty">All clear.</p>';

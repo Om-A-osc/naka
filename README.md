@@ -78,6 +78,17 @@ naming another shop's variant is refused. The merchant seeded from
 credentials. Merchants without Razorpay keys run in recorded mode
 (simulated payments), so a demo tenant needs no Razorpay account.
 
+Every onboarded shop also gets a public storefront at **`/shop/<merchant
+id>`**, the link to share with humans: the live catalog with stock, the
+shop's Telegram bot if one is connected, the MCP snippet, and a plain list
+of what the assistant cannot do. The manifest (`/.well-known/naka.json?
+merchant=<id>`) points at it.
+
+In the console, clicking any order opens a drawer with every gate rule that
+fired on it and the numbers it compared, each payment attempt, the Razorpay
+payments and the ledger rows, the "explain this money action" screen. The
+same drawer opens from an escalation before you approve it.
+
 Inside the console, **Catalog → Download / Upload** lets a merchant edit
 their catalog as a file and put it back; an upload deactivates anything no
 longer listed (never deletes, ledger rows and old checkouts still point at
