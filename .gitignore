@@ -17,3 +17,7 @@ data/*.db-*
 evaluation/runs/*
 !evaluation/runs/.gitkeep
 *.log
+
+# Runner cache; appears if the runtime has no TEMP dir set (never source)
+undefined/
+**/tsx-*/
