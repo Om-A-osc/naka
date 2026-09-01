@@ -153,6 +153,25 @@ export function registerConsoleRoutes(app: FastifyInstance, db: Db, tenants: Ten
     return { orders: rows };
   });
 
+  /** Everything the console knows about one checkout, for the order drawer: lines, every decision with its rule hits, payment attempts, Razorpay payments. */
+  app.get("/api/console/orders/:id", async (req, reply) => {
+    const merchantId = checkAuth(req);
+    if (!merchantId) return reply.code(401).send({ error: { code: "UNAUTHORIZED" } });
+    const { id } = req.params as { id: string };
+    if (tenants.merchantOfCheckout(id) !== merchantId) return notFound(reply);
+    const checkout = db.prepare("SELECT id, status, buyer_ref, agent_id, mandate_id, subtotal_paise, discount_paise, total_paise, coupon_code, attempts, cancel_reason, created_at, completed_at FROM checkouts WHERE id = ?").get(id);
+    if (!checkout) return notFound(reply);
+    const lines = db.prepare("SELECT title, quantity, unit_price_paise, line_total_paise, is_addon FROM checkout_lines WHERE checkout_id = ?").all(id);
+    const decisions = (db.prepare("SELECT action, outcome, rule_hits, explanation, created_at FROM decisions WHERE checkout_id = ? ORDER BY created_at").all(id) as any[]).map((d) => ({
+      ...d,
+      rule_hits: (() => { try { return JSON.parse(d.rule_hits ?? "[]"); } catch { return []; } })(),
+    }));
+    const attempts = db.prepare("SELECT attempt_no, kind, status, razorpay_order_id, plink_id, amount_paise, failure_category, opened_at, closed_at FROM payment_attempts WHERE checkout_id = ? ORDER BY attempt_no").all(id);
+    const payments = db.prepare("SELECT razorpay_payment_id, razorpay_order_id, status, method, amount, error_description, created_at_rzp, source FROM rzp_payments WHERE checkout_id = ? ORDER BY created_at_rzp").all(id);
+    const ledger = db.prepare("SELECT seq, ts, actor, action, decision, amount_paise, razorpay_order_id, razorpay_payment_id FROM ledger WHERE checkout_id = ? ORDER BY seq").all(id);
+    return { checkout, lines, decisions, attempts, payments, ledger };
+  });
+
   app.get("/api/console/agents", async (req, reply) => {
     const merchantId = checkAuth(req);
     if (!merchantId) return reply.code(401).send({ error: { code: "UNAUTHORIZED" } });
@@ -465,7 +484,16 @@ function dashboardPage(): string {
   pre{background:#1f2430;color:#e6e8ec;padding:12px;border-radius:8px;overflow:auto;font-size:.8em;margin:8px 0}
   .kill{padding:10px 14px;border-radius:10px;background:#fde8e8;color:var(--bad);display:none;margin-bottom:14px;font-weight:600}
   .chart{width:100%;height:150px}.empty{color:var(--muted);padding:14px 0}
-  section.page{display:none}section.page.on{display:block}
+  section.page{display:none}section.page.on{display:block;animation:nk-fade-up .25s}
+  @keyframes grow{from{transform:scaleY(0)}}
+  tr.rowlink{cursor:pointer;transition:background .15s}tr.rowlink:hover{background:#f6f9ff}
+  .ov{position:fixed;inset:0;background:rgba(20,24,31,.35);opacity:0;pointer-events:none;transition:opacity .25s;z-index:60}.ov.on{opacity:1;pointer-events:auto}
+  .drawer{position:fixed;top:0;right:0;height:100vh;width:min(560px,100vw);background:#fff;box-shadow:-20px 0 50px -30px rgba(0,0,0,.4);transform:translateX(105%);transition:transform .3s cubic-bezier(.2,.7,.2,1);z-index:70;overflow:auto;padding:20px 22px}.drawer.on{transform:none}
+  .drawer h2{margin:0 0 4px;font-size:1.15em}.drawer h4{margin:18px 0 8px;font-size:.82em;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  .drawer .x{position:absolute;top:14px;right:16px;background:none;border:none;font-size:1.4em;color:var(--muted);cursor:pointer;margin:0;padding:4px}
+  .hit{display:grid;grid-template-columns:24px 1fr auto;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line);font-size:.88em}.hit .dot{width:10px;height:10px;border-radius:50%}.hit .dot.p{background:var(--ok)}.hit .dot.f{background:var(--bad)}.hit code{font-size:.85em}
+  .tl{list-style:none;margin:0;padding:0;border-left:2px solid var(--line);margin-left:6px}.tl li{position:relative;padding:4px 0 8px 14px;font-size:.86em}.tl li:before{content:"";position:absolute;left:-7px;top:9px;width:10px;height:10px;border-radius:50%;background:#fff;border:2px solid var(--accent)}
+  @media(prefers-reduced-motion:reduce){section.page.on,.drawer{animation:none;transition:none}}
   .steps{margin:0;padding-left:18px;color:#334;font-size:.92em}.steps li{margin:4px 0}
   .ok-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--ok);margin-right:6px}.bad-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--bad);margin-right:6px}
   </style></head><body>${nav("console")}
@@ -540,6 +568,8 @@ function dashboardPage(): string {
       </div>
     </section>
   </main></div>
+  <div id="ov" class="ov" onclick="closeOrder()"></div>
+  <aside id="drawer" class="drawer" aria-hidden="true"><button class="x" onclick="closeOrder()" aria-label="Close">×</button><div id="drawerBody"></div></aside>
 
   <script>
     const rs = (p) => '₹' + ((p || 0) / 100).toLocaleString('en-IN', { maximumFractionDigits: 2 });
@@ -562,10 +592,29 @@ function dashboardPage(): string {
       const days = []; for (let i = 13; i >= 0; i--) { const d = new Date(Date.now() - i*864e5).toISOString().slice(0,10); days.push({ day: d, paise: 0, orders: 0 }); }
       (daily || []).forEach(r => { const d = days.find(x => x.day === r.day); if (d) { d.paise = r.paise; d.orders = r.orders; } });
       const max = Math.max(1, ...days.map(d => d.paise)); const w = 700/14;
-      document.getElementById('chart').innerHTML = days.map((d, i) => { const h = Math.round(120 * d.paise / max); return '<rect x="' + (i*w+6) + '" y="' + (130-h) + '" width="' + (w-12) + '" height="' + h + '" rx="3" fill="' + (d.paise ? '#2b6cb0' : '#e6e8ec') + '"><title>' + d.day + ': ' + rs(d.paise) + ' (' + d.orders + ' orders)</title></rect><text x="' + (i*w+w/2) + '" y="146" font-size="9" text-anchor="middle" fill="#889">' + d.day.slice(8) + '</text>'; }).join('');
+      const anim = window.chartDrawn ? '' : ' style="transform-box:fill-box;transform-origin:bottom;animation:grow .7s cubic-bezier(.2,.7,.2,1) ' + '0ms both"';
+      document.getElementById('chart').innerHTML = days.map((d, i) => { const h = Math.round(120 * d.paise / max); return '<rect' + (anim ? anim.replace('0ms', (i*40) + 'ms') : '') + ' x="' + (i*w+6) + '" y="' + (130-h) + '" width="' + (w-12) + '" height="' + h + '" rx="3" fill="' + (d.paise ? '#2b6cb0' : '#e6e8ec') + '"><title>' + d.day + ': ' + rs(d.paise) + ' (' + d.orders + ' orders)</title></rect><text x="' + (i*w+w/2) + '" y="146" font-size="9" text-anchor="middle" fill="#889">' + d.day.slice(8) + '</text>'; }).join('');
       const total = days.reduce((a, d) => a + d.paise, 0), n = days.reduce((a, d) => a + d.orders, 0);
       document.getElementById('chartNote').textContent = n ? rs(total) + ' across ' + n + ' paid orders in 14 days' : 'No paid orders in the last 14 days yet.';
+      window.chartDrawn = true;
     }
+
+    async function openOrder(id) {
+      const d = await j('/api/console/orders/' + id); if (!d.checkout) return;
+      const c = d.checkout;
+      const hits = (dec) => dec.rule_hits.map(h => '<div class="hit"><span class="dot ' + (h.passed ? 'p' : 'f') + '"></span><code>' + esc(h.rule_id) + '</code><span class="muted">' + esc(h.left) + ' vs ' + esc(h.right) + '</span></div>').join('');
+      document.getElementById('drawerBody').innerHTML =
+        '<h2>' + rs(c.total_paise) + ' ' + pill(c.status) + '</h2><span class="id">' + esc(c.id) + '</span><br><span class="muted">' + when(c.created_at) + (c.completed_at ? ' · paid ' + when(c.completed_at) : '') + ' · agent <span class="id">' + esc(c.agent_id) + '</span></span>' +
+        '<h4>Items</h4><table>' + d.lines.map(l => '<tr><td>' + esc(l.title) + (l.is_addon ? ' <span class="pill">add-on</span>' : '') + '</td><td>×' + l.quantity + '</td><td style="text-align:right"><b>' + rs(l.line_total_paise) + '</b></td></tr>').join('') +
+        (c.discount_paise ? '<tr><td colspan="2">Discount ' + esc(c.coupon_code || '') + '</td><td style="text-align:right">−' + rs(c.discount_paise) + '</td></tr>' : '') + '</table>' +
+        '<h4>Decisions, every rule, with the numbers compared</h4>' + (d.decisions.length ? d.decisions.map(dec => '<div style="margin-bottom:10px"><b>' + esc(dec.action) + '</b> → ' + pill(dec.outcome) + ' <span class="muted">' + when(dec.created_at) + '</span><div class="muted" style="margin:4px 0 6px">' + esc(dec.explanation) + '</div>' + hits(dec) + '</div>').join('') : '<p class="muted">No decision recorded.</p>') +
+        '<h4>Payment attempts</h4>' + (d.attempts.length ? '<table>' + d.attempts.map(a => '<tr><td>#' + a.attempt_no + ' ' + esc(a.kind) + '</td><td>' + pill(a.status) + (a.failure_category ? ' <span class="muted">' + esc(a.failure_category) + '</span>' : '') + '</td><td class="id">' + esc(a.razorpay_order_id || a.plink_id || '') + '</td><td style="text-align:right">' + rs(a.amount_paise) + '</td></tr>').join('') + '</table>' : '<p class="muted">No payment attempt yet, the buyer has not confirmed.</p>') +
+        '<h4>Razorpay payments</h4>' + (d.payments.length ? '<table>' + d.payments.map(p => '<tr><td class="id">' + esc(p.razorpay_payment_id) + '</td><td>' + pill(p.status) + '</td><td>' + esc(p.method || '') + '</td><td style="text-align:right">' + rs(p.amount) + '</td></tr>' + (p.error_description ? '<tr><td colspan="4" class="muted">' + esc(p.error_description) + ' <span class="pill">' + esc(p.source) + '</span></td></tr>' : '')).join('') + '</table>' : '<p class="muted">None.</p>') +
+        '<h4>Ledger trail</h4><ul class="tl">' + d.ledger.map(l => '<li><b>' + esc(l.action) + '</b> <span class="muted">' + esc(l.actor) + ' · ' + when(l.ts) + (l.amount_paise ? ' · ' + rs(l.amount_paise) : '') + '</span>' + (l.decision ? ' ' + pill(l.decision) : '') + '</li>').join('') + '</ul>';
+      document.getElementById('ov').classList.add('on'); document.getElementById('drawer').classList.add('on'); document.getElementById('drawer').setAttribute('aria-hidden', 'false');
+    }
+    function closeOrder() { document.getElementById('ov').classList.remove('on'); document.getElementById('drawer').classList.remove('on'); document.getElementById('drawer').setAttribute('aria-hidden', 'true'); }
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeOrder(); });
 
     async function refresh() {
       const s = await j('/api/console/stats'); if (!s.merchant) return;
@@ -601,7 +650,7 @@ function dashboardPage(): string {
 
       const o = await j('/api/console/orders');
       const orderRows = (rows) => rows.length ? '<table><tr><th>when</th><th>items</th><th>total</th><th>status</th><th>agent</th><th>payment</th></tr>' + rows.map(r =>
-        '<tr><td>' + when(r.created_at) + '</td><td>' + esc(r.items || '') + '<br><span class="id">' + esc(r.id) + '</span></td><td><b>' + rs(r.total_paise) + '</b></td><td>' + pill(r.status) + '</td><td class="id">' + esc(r.agent_id) + '</td><td class="id">' + esc(r.payment_id || '') + '</td></tr>').join('') + '</table>' : '<p class="empty">No checkouts yet. Connect a buyer and ask it to shop.</p>';
+        '<tr class="rowlink" onclick="openOrder(\\''+r.id+'\\')"><td>' + when(r.created_at) + '</td><td>' + esc(r.items || '') + '<br><span class="id">' + esc(r.id) + '</span></td><td><b>' + rs(r.total_paise) + '</b></td><td>' + pill(r.status) + '</td><td class="id">' + esc(r.agent_id) + '</td><td class="id">' + esc(r.payment_id || '') + '</td></tr>').join('') + '</table>' : '<p class="empty">No checkouts yet. Connect a buyer and ask it to shop.</p>';
       document.getElementById('orders').innerHTML = orderRows(o.orders); document.getElementById('ordersMini').innerHTML = orderRows(o.orders.slice(0, 6));
 
       const a = await j('/api/console/agents');
@@ -634,7 +683,7 @@ function dashboardPage(): string {
         st.innerHTML = t.running ? '<span class="pill ok">live</span>' : '<span class="pill">idle</span>';
         document.getElementById('telegram').innerHTML =
           '<p><b>@' + esc(t.username) + '</b>, share <a href="' + esc(t.link) + '" target="_blank">' + esc(t.link) + '</a> with customers.</p>' +
-          '<p class="muted">' + (t.running ? '<span class="ok-dot"></span>Running on this server' : '<span class="bad-dot"></span>Not running' + (t.llm_available ? '' : ', no LLM key on the server')) + ' · ' + t.chats_served + ' chats · ' + t.messages_handled + ' messages' + (t.last_error ? ' · last error: ' + esc(t.last_error) : '') + '</p>' +
+          '<p class="muted">' + (t.running ? '<span class="live-dot"></span>Running on this server' : '<span class="bad-dot"></span>Not running' + (t.llm_available ? '' : ', no LLM key on the server')) + ' · ' + t.chats_served + ' chats · ' + t.messages_handled + ' messages' + (t.last_error ? ' · last error: ' + esc(t.last_error) : '') + '</p>' +
           '<p class="muted">Escalation alerts: ' + (t.alerts_chat_set ? '<span class="ok-dot"></span>on, sent to the chat that said <code>/alerts</code>' : 'open your bot and send <code>/alerts</code> to receive approval requests there') + '</p>' +
           '<button class="ghost sm" onclick="tgDisconnect()">Disconnect bot</button>';
       }
@@ -643,14 +692,15 @@ function dashboardPage(): string {
       const out = document.getElementById('tgResult'); out.textContent = 'Checking with Telegram…';
       const r = await fetch('/api/console/telegram', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ token: document.getElementById('tgToken').value }) });
       const d = await r.json();
-      if (!r.ok) { out.textContent = d.error?.message || d.error?.code || 'Failed'; return; }
+      if (!r.ok) { out.textContent = d.error?.message || d.error?.code || 'Failed'; nkToast(out.textContent, 'bad'); return; }
+      nkToast('Telegram bot connected: @' + d.username, 'ok');
       refresh();
     }
-    async function tgDisconnect() { if (!confirm('Disconnect the Telegram bot?')) return; await post('/api/console/telegram', {}, 'DELETE'); refresh(); }
+    async function tgDisconnect() { if (!confirm('Disconnect the Telegram bot?')) return; await post('/api/console/telegram', {}, 'DELETE'); nkToast('Telegram bot disconnected', 'warn'); refresh(); }
     async function savePolicy() {
       const v = (id) => Math.round(Number(document.getElementById(id).value) * 100) || undefined;
       const r = await fetch('/api/console/policy', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ max_per_checkout_paise: v('pMax'), merchant_approval_over_paise: v('pAppr'), per_agent_daily_cap_paise: v('pDaily'), max_qty_per_line: Number(document.getElementById('pQty').value) || undefined }) });
-      const d = await r.json(); document.getElementById('policyResult').textContent = r.ok ? 'Saved.' : (d.error?.message || 'Failed'); refresh();
+      const d = await r.json(); document.getElementById('policyResult').textContent = r.ok ? 'Saved.' : (d.error?.message || 'Failed'); nkToast(r.ok ? 'Policy saved, applies to the next checkout' : (d.error?.message || 'Policy not saved'), r.ok ? 'ok' : 'bad'); refresh();
     }
     async function loadCatalog() {
       const c = await j('/api/console/catalog'); if (!c.variants) return;
@@ -665,11 +715,13 @@ function dashboardPage(): string {
       const r = await fetch('/api/console/catalog/import', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
       const d = await r.json();
       out.textContent = r.ok ? ('Imported ' + d.products + ' products / ' + d.variants + ' variants') : ('Rejected: ' + (d.error?.message || d.error?.code));
+      nkToast(out.textContent, r.ok ? 'ok' : 'bad');
       loadCatalog(); refresh();
     }
     async function mint() {
       const name = prompt('Name for this buyer agent (e.g. "claude-laptop")', 'claude-laptop'); if (name === null) return;
       const k = await post('/api/console/agents/new', { name }); if (!k.agent_id) return;
+      nkToast('Agent minted, the private key is shown once', 'ok');
       document.getElementById('kit').innerHTML =
         '<div style="border:1px dashed var(--accent);border-radius:10px;padding:12px 14px;margin-bottom:12px"><b>New agent ' + esc(k.agent_id) + '</b>, the private key below is shown once.<br>' +
         '<span class="muted">Mandate: up to ' + rs(k.mandate.max_per_checkout_paise) + ' per checkout in ' + esc(k.mandate.allowed_categories.join(', ')) + ' for ' + k.mandate.expires_in_days + ' days. Every checkout still needs a human on the pay page.</span>' +
@@ -679,16 +731,16 @@ function dashboardPage(): string {
     }
     function cp(id) { navigator.clipboard.writeText(document.getElementById(id).textContent); }
     function dl(id, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([document.getElementById(id).textContent])); a.download = name; a.click(); }
-    async function approve(id) { await post('/api/console/escalations/'+id+'/approve'); refresh(); }
-    async function deny(id) { await post('/api/console/escalations/'+id+'/deny', {}); refresh(); }
-    async function approveRefund(id) { await post('/api/console/refunds/'+id+'/approve'); refresh(); }
-    async function denyRefund(id) { await post('/api/console/refunds/'+id+'/deny'); refresh(); }
-    async function agentAction(id, action) { await post('/api/console/agents/'+id+'/'+action); refresh(); }
-    async function kill(on) { await post('/api/console/kill-switch', { on }); refresh(); }
-    async function fault() { await post('/api/console/faults/webhook-500', { seconds: 90 }); }
-    async function clearFault() { await post('/api/console/faults/webhook-500/clear'); }
-    async function verify() { const r = await j('/api/console/ledger/verify'); document.getElementById('verifyResult').textContent = r.ok ? ('Chain OK, ' + r.checked + ' rows verified') : ('TAMPERED at seq ' + r.first_bad_seq); }
-    async function tamperDemo() { const r = await post('/api/console/ledger/tamper-demo'); alert('Row #' + r.tampered_seq + ' was edited outside the app (the append-only trigger was lifted to simulate a direct file edit). Click "Verify chain".'); refresh(); }
+    async function approve(id) { await post('/api/console/escalations/'+id+'/approve'); nkToast('Approved, the buyer can now confirm and pay', 'ok'); refresh(); }
+    async function deny(id) { await post('/api/console/escalations/'+id+'/deny', {}); nkToast('Denied and cancelled; stock released', 'warn'); refresh(); }
+    async function approveRefund(id) { const r = await post('/api/console/refunds/'+id+'/approve'); nkToast(r.razorpay_refund_id ? 'Refund sent to Razorpay: ' + r.razorpay_refund_id : (r.error?.message || 'Refund failed'), r.razorpay_refund_id ? 'ok' : 'bad'); refresh(); }
+    async function denyRefund(id) { await post('/api/console/refunds/'+id+'/deny'); nkToast('Refund denied', 'warn'); refresh(); }
+    async function agentAction(id, action) { await post('/api/console/agents/'+id+'/'+action); nkToast(action === 'suspend' ? 'Agent suspended, its calls are now denied' : 'Agent activated', action === 'suspend' ? 'warn' : 'ok'); refresh(); }
+    async function kill(on) { await post('/api/console/kill-switch', { on }); nkToast(on ? 'Kill switch ON, every new checkout is denied' : 'Kill switch off', on ? 'bad' : 'ok'); refresh(); }
+    async function fault() { await post('/api/console/faults/webhook-500', { seconds: 90 }); nkToast('Webhook route will answer 500 for 90 s, watch the reconciler finish the payment anyway', 'warn'); }
+    async function clearFault() { await post('/api/console/faults/webhook-500/clear'); nkToast('Webhook fault cleared', 'ok'); }
+    async function verify() { const r = await j('/api/console/ledger/verify'); const t = r.ok ? ('Chain OK, ' + r.checked + ' rows verified') : ('TAMPERED at seq ' + r.first_bad_seq); document.getElementById('verifyResult').textContent = t; nkToast(t, r.ok ? 'ok' : 'bad'); }
+    async function tamperDemo() { const r = await post('/api/console/ledger/tamper-demo'); nkToast('Row #' + r.tampered_seq + ' was edited outside the app. Now click Verify chain.', 'warn'); refresh(); }
     async function logout() { await post('/console/logout'); location.reload(); }
     refresh(); loadCatalog(); setInterval(refresh, 6000);
   </script></body></html>`;

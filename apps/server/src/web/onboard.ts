@@ -192,6 +192,7 @@ textarea{font-family:ui-monospace,monospace;font-size:0.85em;min-height:220px}.r
 button{background:#2b6cb0;color:#fff;border:none;padding:10px 18px;border-radius:6px;cursor:pointer;font-size:1em;margin-top:16px}
 .muted{color:#666;font-size:0.9em}.card{border:1px solid #ddd;border-radius:10px;padding:16px;margin:16px 0}pre{background:#f7f7f7;padding:10px;border-radius:6px;overflow:auto;font-size:0.85em}
 .err{color:#c53030}code{background:#f0f0f0;padding:1px 4px;border-radius:3px}
+form{animation:nk-fade-up .5s}.kitwrap{animation:nk-fade-up .5s}@keyframes draw{to{stroke-dashoffset:0}}@keyframes pop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.08);opacity:1}100%{transform:scale(1)}}.mark{width:72px;height:72px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:6px 0 12px;animation:pop .5s cubic-bezier(.2,.7,.2,1)}.mark.ok{background:#e6f4ea}.mark.bad{background:#fde8e8}.mark.wait{background:#eef4ff}.mark svg{width:40px;height:40px;fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:60;stroke-dashoffset:60;animation:draw .6s .25s ease-out forwards}.mark.ok svg{stroke:#2f855a}.mark.bad svg{stroke:#c53030}.spinner.big{width:30px;height:30px;border-width:3px;margin:0}@media(prefers-reduced-motion:reduce){.mark,.mark svg{animation:none;stroke-dashoffset:0}}
 .steps{display:flex;gap:8px;margin:8px 0 16px;font-size:0.85em}.steps span{padding:4px 10px;border-radius:999px;background:#eef2f7;color:#555}.steps span.on{background:#2b6cb0;color:#fff}
 h2{margin:8px 0}</style></head><body>${nav("onboard")}<div class="wrap">
 <div class="steps"><span class="on">1 Your shop</span><span>2 Connection kit</span><span>3 Buyers shop from Claude</span></div>
@@ -237,7 +238,7 @@ h2{margin:8px 0}</style></head><body>${nav("onboard")}<div class="wrap">
     };
     const r = await fetch('/api/onboard', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const d = await r.json();
-    if (!r.ok) { err.textContent = d.error?.message || d.error?.code || 'Failed'; return false; }
+    if (!r.ok) { err.textContent = d.error?.message || d.error?.code || 'Failed'; nkToast(err.textContent, 'bad'); return false; }
     renderKit(d);
     return false;
   }
@@ -252,7 +253,7 @@ h2{margin:8px 0}</style></head><body>${nav("onboard")}<div class="wrap">
   function download(id, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([document.getElementById(id).textContent])); a.download = name; a.click(); }
   function renderKit(d) {
     document.getElementById('f').style.display = 'none';
-    document.getElementById('kit').innerHTML =
+    document.getElementById('kit').innerHTML = '<div class="kitwrap"><div class="mark ok"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></div>' +
       '<h2>' + esc(d.merchant.display_name) + ' is live</h2>' +
       '<p>Mode: <b>' + esc(d.merchant.mode) + '</b>. Save this page, the key and secret below are shown once and not stored.</p>' +
       '<div class="card"><b>1. Your console</b><p><a href="' + d.console.url + '" target="_blank">' + d.console.url + '</a>, merchant id <code>' + esc(d.console.merchant_id) + '</code>, the password you just chose.</p></div>' +
@@ -260,8 +261,11 @@ h2{margin:8px 0}</style></head><body>${nav("onboard")}<div class="wrap">
       '<h3>3. Give this to an AI buyer</h3>' +
       block('Agent private key, save as ' + d.merchant.id + '-agent.private.pem', d.buyer_agent.private_key_pem, d.merchant.id + '-agent.private.pem') +
       block('.mcp.json for Claude Code (set NAKA_AGENT_KEY to where you saved the key)', JSON.stringify(d.mcp.config, null, 2), '.mcp.json') +
-      '<p class="muted">Agent <code>' + esc(d.buyer_agent.agent_id) + '</code> may spend up to ₹' + (d.buyer_agent.mandate.max_per_checkout_paise/100) + ' per checkout in ' + d.buyer_agent.mandate.allowed_categories.join(', ') + ', for ' + d.buyer_agent.mandate.expires_in_days + ' days. Every checkout still needs a human to confirm on the pay page.</p>';
-    window.scrollTo(0, 0);
+      '<p class="muted">Agent <code>' + esc(d.buyer_agent.agent_id) + '</code> may spend up to ₹' + (d.buyer_agent.mandate.max_per_checkout_paise/100) + ' per checkout in ' + d.buyer_agent.mandate.allowed_categories.join(', ') + ', for ' + d.buyer_agent.mandate.expires_in_days + ' days. Every checkout still needs a human to confirm on the pay page.</p>' +
+      '<p><a href="/shop/' + esc(d.merchant.id) + '" target="_blank">Open your public storefront →</a> &nbsp; <a href="' + d.console.url + '" target="_blank">Open your console →</a></p></div>';
+    document.querySelectorAll('.steps span').forEach(function (s, i) { s.classList.toggle('on', i === 1); });
+    nkToast(d.merchant.display_name + ' is live', 'ok');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 </script></div></body></html>`;
 }

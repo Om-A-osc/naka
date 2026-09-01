@@ -12,6 +12,7 @@ import { registerPayRoutes } from "./web/pay.js";
 import { registerConsoleRoutes } from "./web/console.js";
 import { registerOnboardRoutes } from "./web/onboard.js";
 import { registerLandingRoutes } from "./web/landing.js";
+import { registerShopRoutes } from "./web/shop.js";
 import { startReconcileLoop } from "./reconcile/poller.js";
 import { env } from "./config/env.js";
 import { Tenants } from "./tenants.js";
@@ -51,6 +52,7 @@ export async function buildServer() {
   registerConsoleRoutes(app, db, tenants, telegram);
   registerOnboardRoutes(app, db);
   registerLandingRoutes(app, db);
+  registerShopRoutes(app, db);
 
   app.get("/health", async () => ({ ok: true, mode: rzp.mode }));
   app.get("/.well-known/naka.json", async (req) => manifest(db, ((req.query as any)?.merchant as string | undefined) || env.merchantId));
