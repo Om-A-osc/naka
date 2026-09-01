@@ -14,7 +14,8 @@ RUN apt-get update \
 
 WORKDIR /app
 COPY . .
-RUN pnpm install --frozen-lockfile
+# --prod=false: tsx (the TypeScript runner) is a devDependency and must be in the image
+RUN pnpm install --frozen-lockfile --prod=false
 
 ENV NODE_ENV=production \
     PORT=3000
@@ -26,6 +27,7 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s \
   CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
-# serve.ts seeds the demo merchant on an empty database, so a first boot
-# with an empty volume comes up with a working shop and a console.
-CMD ["pnpm", "server"]
+# Start Node directly on the server entry point, no pnpm/corepack in the
+# runtime path. serve.ts seeds the demo merchant on an empty database, so a
+# first boot with an empty volume comes up with a working shop and a console.
+CMD ["node", "node_modules/tsx/dist/cli.mjs", "apps/server/src/serve.ts"]

@@ -12,6 +12,10 @@ async function seedIfEmpty(): Promise<void> {
   console.log(`[naka] empty database, seeded demo merchant ${out.merchant_id} with buyer agent ${out.agents["buyer-claude"].id}`);
 }
 
+// First thing on stdout, before any import-time work can fail quietly: if this line is missing from a deploy log, the process never reached us.
+console.log(`[naka] boot node=${process.version} port=${process.env.NAKA_PORT ?? process.env.PORT ?? 3000} db=${resolveDbPath()} volume=${process.env.RAILWAY_VOLUME_MOUNT_PATH ?? "-"} mode=${process.env.RAZORPAY_MODE ?? "recorded"}`);
+process.on("exit", (code) => console.log(`[naka] exit code=${code}`));
+
 async function main() {
   await seedIfEmpty();
   const { app, telegram } = await buildServer();
