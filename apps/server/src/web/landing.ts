@@ -27,16 +27,18 @@ function landingPage(s: { merchants: number; paid: number; ledger: number; agent
     ["get_checkout", "status, including payment"],
     ["cancel_checkout", "release an unpaid cart"],
   ];
-  const flow: Array<[string, string]> = [
-    ["Buyer's AI", "asks for 500 g filter coffee"],
-    ["search_catalog", "real prices, real stock"],
-    ["create_checkout", "cart priced server-side"],
-    ["Policy gate", "A2 · B1 · B3 · B5 · S1 · G2"],
-    ["Human confirms", "one click on the pay page"],
-    ["Razorpay order", "created exactly once"],
-    ["Webhook / reconcile", "payment truth, twice over"],
-    ["Ledger", "hash-chained, append-only"],
+  // [title, detail, actor], the actor tag is the point of the diagram: the model only ever appears in the first hop.
+  const flow: Array<[string, string, "model" | "code" | "gate" | "human" | "rzp"]> = [
+    ["Buyer's AI", "asks for 500 g of filter coffee", "model"],
+    ["search_catalog", "real prices and stock, read from the same table you edit", "code"],
+    ["create_checkout", "cart priced server-side; the model never sees a price it can change", "code"],
+    ["Policy gate", "named rules (A2 · B1 · B3 · B5 · S1 · G2), each with the numbers it compared", "gate"],
+    ["Human confirms", "one click on the nonce-gated pay page; nothing moves before it", "human"],
+    ["Razorpay order", "created exactly once per attempt, amount locked", "rzp"],
+    ["Webhook / reconcile", "payment truth twice over; a dead webhook still settles", "code"],
+    ["Ledger", "hash-chained, append-only, verifiable from the console", "code"],
   ];
+  const actorLabel = { model: "model proposes", code: "deterministic code", gate: "policy gate", human: "human decides", rzp: "Razorpay" };
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Naka</title>
 <meta name="description" content="Naka makes any Razorpay merchant transactable by AI buyer agents, every money action explainable, bounded and gated.">
 <style>${BASE_CSS}
@@ -62,15 +64,24 @@ h2{font-size:1.5em;margin:52px 0 16px;letter-spacing:-.01em}h2 small{display:blo
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
 .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px}.card h3{margin:0 0 8px;font-size:1.05em}.card p{margin:0;color:var(--muted);font-size:.95em;line-height:1.5}
 .num{display:inline-flex;width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;align-items:center;justify-content:center;font-size:.85em;margin-right:10px}
-.flow{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px 18px 18px;overflow-x:auto}
-.track{position:relative;display:grid;grid-template-columns:repeat(8,minmax(118px,1fr));gap:10px;min-width:960px}
-.track:before{content:"";position:absolute;left:8%;right:8%;top:22px;height:2px;background:var(--line)}
-.track .pulse{position:absolute;top:18px;left:8%;width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 6px rgba(43,108,176,.15);animation:ride 8s linear infinite}
-@keyframes ride{0%{left:8%}100%{left:calc(92% - 10px)}}
-.node{position:relative;text-align:center;padding-top:8px}
-.node i{display:block;width:30px;height:30px;margin:0 auto 10px;border-radius:50%;background:#fff;border:2px solid var(--line);transition:border-color .3s,box-shadow .3s,transform .3s;position:relative;z-index:1}
-.node.lit i{border-color:var(--accent);box-shadow:0 0 0 6px rgba(43,108,176,.14);transform:scale(1.12)}
-.node b{display:block;font-size:.88em;transition:color .3s}.node.lit b{color:var(--accent)}.node span{display:block;color:var(--muted);font-size:.78em;margin-top:3px}
+.flow{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 18px 14px}
+.rail{height:5px;background:var(--line);border-radius:5px;margin:0 0 16px;overflow:hidden}
+.rail i{display:block;height:100%;width:12.5%;border-radius:5px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .55s cubic-bezier(.2,.7,.2,1)}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.step{position:relative;border:1px solid var(--line);border-radius:12px;padding:14px 14px 13px;background:#fff;cursor:pointer;transition:border-color .3s,box-shadow .3s,transform .3s,opacity .3s}
+.step:after{content:"›";position:absolute;right:-11px;top:14px;color:#c4cad3;font-size:1.25em;font-weight:700;background:#fff;line-height:1;padding:0 2px;z-index:1}
+.step:nth-child(4n):after,.step:last-child:after{display:none}
+.step .n{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;background:#eef2f7;color:var(--muted);font-size:.78em;font-weight:700;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;transition:background .3s,color .3s}
+.who{float:right;font-size:.66em;text-transform:uppercase;letter-spacing:.06em;padding:4px 8px;border-radius:999px;margin-top:3px;font-weight:600}
+.who.model{background:#f3e8ff;color:#6b21a8}.who.code{background:#e8f0fb;color:#1e4e8c}.who.gate{background:#fff4e0;color:#8a5a0f}.who.human{background:#e6f4ea;color:#276749}.who.rzp{background:#e6ebf5;color:#0c2a66}
+.step b{display:block;margin:12px 0 4px;font-size:.95em;letter-spacing:-.01em}.step .d{display:block;color:var(--muted);font-size:.82em;line-height:1.45}
+.step.done{opacity:.72}.step.done .n{background:#e6f4ea;color:var(--ok)}
+.step.lit{border-color:transparent;background:linear-gradient(#fff,#fff) padding-box,linear-gradient(135deg,var(--accent),var(--accent2)) border-box;box-shadow:0 18px 34px -20px rgba(43,108,176,.75);transform:translateY(-3px)}
+.step.lit .n{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-top:16px;padding-top:12px;border-top:1px solid var(--line);font-size:.82em;color:var(--muted)}
+.legend .who{float:none;margin:0}
+@media(max-width:900px){.steps{grid-template-columns:repeat(2,1fr)}.step:nth-child(4n):after{display:inline}.step:nth-child(2n):after,.step:last-child:after{display:none}}
+@media(max-width:520px){.steps{grid-template-columns:1fr}.step:after{display:none!important}.who{float:none;display:inline-block;margin-left:8px}}
 .tools{background:#fff;border:1px solid var(--line);border-radius:12px;padding:6px 18px}.tools div{display:grid;grid-template-columns:190px 1fr;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:.93em;transition:background .2s}.tools div:hover{background:#fafbfd}.tools div:last-child{border-bottom:none}.tools code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--accent)}
 pre{background:#1f2430;color:#e6e8ec;padding:16px;border-radius:10px;overflow:auto;font-size:.82em;position:relative;margin:8px 0}
 .copy{position:absolute;top:10px;right:10px;background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:4px 9px;font-size:.8em;cursor:pointer}.copy:hover{background:rgba(255,255,255,.22)}
@@ -78,7 +89,7 @@ pre{background:#1f2430;color:#e6e8ec;padding:16px;border-radius:10px;overflow:au
 .cta-band{margin:56px 0 0;padding:34px 28px;border-radius:16px;background:linear-gradient(135deg,#1f2a44,#2b6cb0 60%,#7c3aed);color:#fff;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;box-shadow:0 24px 50px -30px rgba(43,108,176,.9)}
 .cta-band h3{margin:0 0 4px;font-size:1.3em}.cta-band p{margin:0;opacity:.85}.cta-band .btn.primary{background:#fff;color:var(--accent);box-shadow:none}
 footer{margin:40px 0 30px;color:var(--muted);font-size:.85em;border-top:1px solid var(--line);padding-top:16px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
-@media(prefers-reduced-motion:reduce){.hero{animation:none}.track .pulse{animation:none}.btn:hover{transform:none}}
+@media(prefers-reduced-motion:reduce){.hero{animation:none}.rail i,.step{transition:none}.btn:hover{transform:none}}
 </style></head><body>${nav("home")}
 <section class="hero">
   <div class="blob b1 parallax" data-parallax="0.25"></div>
@@ -105,12 +116,13 @@ footer{margin:40px 0 30px;color:var(--muted);font-size:.85em;border-top:1px soli
     <div><b>${s.mode === "real" ? "Test mode" : "Simulated"}</b><span>${s.mode === "real" ? "real Razorpay test-mode orders and webhooks" : "recorded client, no keys needed"}</span></div>
   </div>
 
-  <h2 class="reveal">One purchase, step by step <small>every hop is either deterministic code or a human, the model only proposes</small></h2>
-  <div class="flow reveal" data-delay="1">
-    <div class="track" id="track">
-      <div class="pulse"></div>
-      ${flow.map(([t, d], i) => `<div class="node${i === 0 ? " lit" : ""}"><i></i><b>${t}</b><span>${d}</span></div>`).join("")}
+  <h2 class="reveal">One purchase, step by step <small>every hop is either deterministic code or a human. The model only proposes</small></h2>
+  <div class="flow reveal" data-delay="1" id="flow">
+    <div class="rail"><i id="railFill"></i></div>
+    <div class="steps">
+      ${flow.map(([t, d, who], i) => `<div class="step${i === 0 ? " lit" : ""}" role="button" tabindex="0" aria-label="Step ${i + 1}: ${t}"><span class="n">${String(i + 1).padStart(2, "0")}</span><span class="who ${who}">${actorLabel[who]}</span><b>${t}</b><span class="d">${d}</span></div>`).join("")}
     </div>
+    <div class="legend"><span>Who acts at each hop:</span><span class="who model">model proposes</span><span class="who code">deterministic code</span><span class="who gate">policy gate</span><span class="who human">human decides</span><span class="who rzp">Razorpay</span><span>Hover a step to pause.</span></div>
   </div>
 
   <h2 class="reveal">How it works</h2>
@@ -123,7 +135,7 @@ footer{margin:40px 0 30px;color:var(--muted);font-size:.85em;border-top:1px soli
   <h2 class="reveal">What a buyer agent can do here</h2>
   <div class="tools reveal" data-delay="1">${tools.map(([n, d]) => `<div><code>${n}</code><span>${d}</span></div>`).join("")}</div>
 
-  <h2 class="reveal">Connect from Claude Code <small>mint a buyer agent in your console, save its key, paste this into <code>.mcp.json</code>, the demo shop here is <b>${s.defaultShop}</b></small></h2>
+  <h2 class="reveal">Connect from Claude Code <small>mint a buyer agent in your console, save its key, paste this into <code>.mcp.json</code>. The demo shop here is <b>${s.defaultShop}</b></small></h2>
   <pre class="reveal" data-delay="1"><button class="copy" onclick="copySnippet(this)">Copy</button><code id="snippet">{
   "mcpServers": {
     "naka": {
@@ -159,11 +171,20 @@ footer{margin:40px 0 30px;color:var(--muted);font-size:.85em;border-top:1px soli
 </div>
 <script>
   (function(){
+    var reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var steps=[].slice.call(document.querySelectorAll('#flow .step')), fill=document.getElementById('railFill'), k=0, paused=false;
+    function setStep(i){ k=i; steps.forEach(function(s,j){ s.classList.toggle('lit', j===i); s.classList.toggle('done', j<i); }); fill.style.width=((i+1)/steps.length*100)+'%'; }
+    steps.forEach(function(s,i){
+      s.addEventListener('mouseenter', function(){ paused=true; setStep(i); });
+      s.addEventListener('mouseleave', function(){ paused=false; });
+      s.addEventListener('click', function(){ setStep(i); });
+      s.addEventListener('keydown', function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); setStep(i); } });
+    });
+    setStep(0);
+    if(reduce) return;
+    setInterval(function(){ if(!paused) setStep((k+1)%steps.length); }, 1500);
     var words=["coffee roaster","shoe store","bookshop","bakery","pharmacy","sari boutique"], i=0, el=document.getElementById('rot');
-    if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     setInterval(function(){ el.classList.add('out'); setTimeout(function(){ i=(i+1)%words.length; el.textContent=words[i]; el.classList.remove('out'); el.classList.add('pre'); requestAnimationFrame(function(){ requestAnimationFrame(function(){ el.classList.remove('pre'); }); }); },360); }, 2600);
-    var nodes=[].slice.call(document.querySelectorAll('#track .node')), k=0;
-    setInterval(function(){ nodes[k].classList.remove('lit'); k=(k+1)%nodes.length; nodes[k].classList.add('lit'); }, 1000);
   })();
   function copySnippet(btn){ navigator.clipboard.writeText(document.getElementById('snippet').textContent).then(function(){ btn.textContent='Copied'; nkToast('Snippet copied, fill in your agent id, mandate id and key path','ok'); setTimeout(function(){ btn.textContent='Copy'; },1500); }); }
 </script>
