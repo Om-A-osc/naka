@@ -310,6 +310,25 @@ describe("console isolation", () => {
 
     await json("/api/console/kill-switch", { method: "POST", headers: { cookie: shop }, body: JSON.stringify({ on: false }) });
   });
+
+  it("the order drawer explains a merchant's own checkout and hides another merchant's", async () => {
+    const shopBuyer = new NakaClient(baseUrl, kit.buyer_agent.agent_id, kit.buyer_agent.private_key_pem, "chappal");
+    const created = await shopBuyer.createCheckout({ mandate_id: kit.buyer_agent.mandate_id, line_items: [{ variant_id: "var_socks_std", quantity: 1 }] });
+    const shop = await login("chappal", SHOP_PASSWORD);
+    const coffee = await login(undefined, DEFAULT_PASSWORD);
+
+    const own = await json(`/api/console/orders/${created.checkout_id}`, { headers: { cookie: shop } });
+    expect(own.status).toBe(200);
+    expect(own.body.checkout.id).toBe(created.checkout_id);
+    expect(own.body.lines).toHaveLength(1);
+    expect(own.body.decisions[0].outcome).toBe("ALLOW");
+    expect(own.body.decisions[0].rule_hits.map((h: any) => h.rule_id)).toContain("B1_MAX_PER_CHECKOUT");
+    expect(own.body.ledger.length).toBeGreaterThan(0);
+
+    const foreign = await json(`/api/console/orders/${created.checkout_id}`, { headers: { cookie: coffee } });
+    expect(foreign.status).toBe(404);
+    expect((await json(`/api/console/orders/${created.checkout_id}`)).status).toBe(401);
+  });
 });
 
 describe("webhook isolation", () => {
