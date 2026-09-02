@@ -22,6 +22,7 @@ export interface TelegramStatus {
   chats_served: number;
   messages_handled: number;
   last_error: string | null;
+  providers: string[];
 }
 
 /** Runs one Telegram bot per merchant, inside the server, from a token the merchant pasted into its console. */
@@ -53,6 +54,7 @@ export class TelegramHost {
       chats_served: runner?.chatsServed ?? 0,
       messages_handled: runner?.messagesHandled ?? 0,
       last_error: runner?.lastError ?? null,
+      providers: providerChain().map((p) => `${p.label}/${p.model}`),
     };
   }
 

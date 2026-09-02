@@ -171,18 +171,20 @@ export class TelegramBotRunner {
           }
 
           let reply: string;
-          if (!check.ok) reply = "I have an update on your order, let me check the details again before I say a number.";
+          if (!check.ok) reply = "I have an update on your order. Let me check the details again before I say a number.";
           else if (text) reply = text;
           else if (iterations >= MAX_TOOL_ROUNDS) reply = "I had trouble looking that up just now. Could you tell me the product and size again?";
-          else reply = "Sorry, I didn't catch that, could you say it another way?";
+          else reply = "Sorry, I didn't catch that. Could you say it another way?";
           this.log(`  [reply] ${reply.slice(0, 160)}`);
           await sendMessage(o.token, chatId, toTelegramHtml(reply), toPlainText(reply));
         } catch (err: any) {
           this.lastError = String(err?.message ?? err);
           this.log(`chat ${chatId} error: ${this.lastError}`);
-          const reply = err?.status === 429
-            ? "I'm getting rate-limited right now, please wait about a minute and try again."
-            : "Sorry, something went wrong on my end, please try again.";
+          const reply = err?.status === 429 && err?.exhausted
+            ? "This shop's assistant has used up its AI quota for today. Please try again later, or contact the shop directly."
+            : err?.status === 429
+              ? "I'm getting rate-limited right now. Please wait a minute and try again."
+              : "Sorry, something went wrong on my end. Please try again.";
           await sendMessage(o.token, chatId, reply).catch(() => {});
         }
       }
