@@ -686,7 +686,7 @@ function dashboardPage(): string {
           '<p><b>@' + esc(t.username) + '</b>, share <a href="' + esc(t.link) + '" target="_blank">' + esc(t.link) + '</a> with customers.</p>' +
           '<p class="muted">' + (t.running ? '<span class="live-dot"></span>Running on this server' : '<span class="bad-dot"></span>Not running' + (t.llm_available ? '' : ', no LLM key on the server')) + ' · ' + t.chats_served + ' chats · ' + t.messages_handled + ' messages' + (t.last_error ? ' · last error: ' + esc(t.last_error) : '') + '</p>' +
           '<p class="muted small">Models, in fallback order: ' + esc((t.providers || []).join(' → ') || 'none configured') + '</p>' +
-          (t.last_error && /per-day|per_day|daily/i.test(t.last_error) ? '<p class="muted small">OpenRouter\'s free tier allows 50 requests a day and resets at 05:30 IST. Add $10 of credits there for 1,000 a day, or let the bot fall through to Gemini (set GEMINI_API_KEY on the server).</p>' : '') +
+          (t.last_error && /per-day|per_day|daily/i.test(t.last_error) ? '<p class="muted small">The OpenRouter free tier allows 50 requests a day and resets at 05:30 IST. Add $10 of credits there for 1,000 a day, or let the bot fall through to Gemini (set GEMINI_API_KEY on the server).</p>' : '') +
           '<p class="muted">Escalation alerts: ' + (t.alerts_chat_set ? '<span class="ok-dot"></span>on, sent to the chat that said <code>/alerts</code>' : 'open your bot and send <code>/alerts</code> to receive approval requests there') + '</p>' +
           '<button class="ghost sm" onclick="tgDisconnect()">Disconnect bot</button>';
       }
