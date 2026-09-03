@@ -5,6 +5,7 @@ import { getDb, type Db } from "@naka/db";
 import { createRazorpayClient, webhookSecrets, RecordedRazorpayClient } from "@naka/razorpay";
 import { loadPolicy, releaseExpiredReservations, merchantDisplayName } from "@naka/engine";
 import { registerToolRoutes } from "./mcp/tools.js";
+import { registerRemoteMcpRoutes } from "./mcp/remote.js";
 import { registerCheckoutSessionRoutes } from "./rest/checkout-sessions.js";
 import { registerWebhookRoutes } from "./webhooks/route.js";
 import { verifyAndApplyWebhook } from "./webhooks/apply.js";
@@ -52,6 +53,7 @@ export async function buildServer() {
   const tenants = new Tenants(db, { merchantId: env.merchantId, rzp, secrets, keyId: env.keyId, keySecret: env.keySecret });
 
   registerToolRoutes(app, db);
+  registerRemoteMcpRoutes(app, db);
   registerCheckoutSessionRoutes(app, db);
   await registerWebhookRoutes(app, db, tenants);
   registerPayRoutes(app, db, tenants);

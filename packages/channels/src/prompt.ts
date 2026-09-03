@@ -3,8 +3,12 @@ import { readFileSync } from "node:fs";
 const SYSTEM_PROMPT_PATH = new URL("./prompts/system.md", import.meta.url);
 
 /** The system prompt with the merchant's name filled in from the server's own manifest. */
+/** The prompt with a name already known, for callers that live inside the server. */
+export function renderSystemPrompt(merchantName: string): string {
+  return readFileSync(SYSTEM_PROMPT_PATH, "utf8").replaceAll("{{merchant_name}}", merchantName);
+}
+
 export async function loadSystemPrompt(baseUrl: string, merchantId?: string): Promise<string> {
-  const template = readFileSync(SYSTEM_PROMPT_PATH, "utf8");
   let merchantName = "the merchant";
   try {
     const res = await fetch(`${baseUrl}/.well-known/naka.json${merchantId ? `?merchant=${encodeURIComponent(merchantId)}` : ""}`);
@@ -13,5 +17,5 @@ export async function loadSystemPrompt(baseUrl: string, merchantId?: string): Pr
   } catch {
     // A missing manifest costs a name, not a conversation.
   }
-  return template.replaceAll("{{merchant_name}}", merchantName);
+  return renderSystemPrompt(merchantName);
 }

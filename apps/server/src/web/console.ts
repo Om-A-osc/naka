@@ -194,7 +194,7 @@ export function registerConsoleRoutes(app: FastifyInstance, db: Db, tenants: Ten
     if (!merchantId) return reply.code(401).send({ error: { code: "UNAUTHORIZED" } });
     const { name } = (req.body ?? {}) as { name?: string };
     const minted = mintBuyerAgent(db, merchantId, (name ?? "").trim() || `buyer-${Date.now().toString(36)}`);
-    return { ...minted, mcp: mcpConfigFor(merchantId, minted.agent_id, minted.mandate_id) };
+    return { ...minted, mcp: mcpConfigFor(merchantId, minted.agent_id, minted.mandate_id, minted.mcp_token) };
   });
 
   app.post("/console/logout", async (_req, reply) => {
@@ -724,12 +724,13 @@ function dashboardPage(): string {
     async function mint() {
       const name = prompt('Name for this buyer agent (e.g. "claude-laptop")', 'claude-laptop'); if (name === null) return;
       const k = await post('/api/console/agents/new', { name }); if (!k.agent_id) return;
-      nkToast('Agent minted, the private key is shown once', 'ok');
+      nkToast('Agent minted. The token and key are shown once', 'ok');
       document.getElementById('kit').innerHTML =
-        '<div style="border:1px dashed var(--accent);border-radius:10px;padding:12px 14px;margin-bottom:12px"><b>New agent ' + esc(k.agent_id) + '</b>, the private key below is shown once.<br>' +
+        '<div style="border:1px dashed var(--accent);border-radius:10px;padding:12px 14px;margin-bottom:12px"><b>New agent ' + esc(k.agent_id) + '</b>. The token and key below are shown once.<br>' +
         '<span class="muted">Mandate: up to ' + rs(k.mandate.max_per_checkout_paise) + ' per checkout in ' + esc(k.mandate.allowed_categories.join(', ')) + ' for ' + k.mandate.expires_in_days + ' days. Every checkout still needs a human on the pay page.</span>' +
-        '<p><button class="ghost sm" onclick="dl(\\'pem\\',\\'' + esc(k.agent_id) + '.private.pem\\')">Download key</button><button class="ghost sm" onclick="cp(\\'pem\\')">Copy key</button> <button class="ghost sm" onclick="cp(\\'mcp\\')">Copy .mcp.json</button></p>' +
-        '<pre id="pem">' + esc(k.private_key_pem) + '</pre><pre id="mcp">' + esc(JSON.stringify(k.mcp.config, null, 2)) + '</pre></div>';
+        '<p><button class="sm" onclick="cp(\\'mcp\\')">Copy .mcp.json (remote)</button><button class="ghost sm" onclick="cp(\\'cmd\\')">Copy claude mcp add command</button> <button class="ghost sm" onclick="dl(\\'pem\\',\\'' + esc(k.agent_id) + '.private.pem\\')">Download private key (local stdio only)</button></p>' +
+        '<pre id="mcp">' + esc(JSON.stringify(k.mcp.config, null, 2)) + '</pre><pre id="cmd">' + esc(k.mcp.command) + '</pre>' +
+        '<details><summary class="muted">Private key and local stdio config (only if the buyer runs the MCP server on their own machine)</summary><pre id="pem">' + esc(k.private_key_pem) + '</pre><pre>' + esc(JSON.stringify(k.mcp.stdio, null, 2)) + '</pre></details></div>';
       refresh();
     }
     function cp(id) { navigator.clipboard.writeText(document.getElementById(id).textContent); }

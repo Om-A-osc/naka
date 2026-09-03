@@ -19,9 +19,17 @@ export function migrate(db: Database.Database): void {
   const sql = readFileSync(join(__dirname, "schema.sql"), "utf8");
   db.exec(sql);
   ensureMerchantColumns(db);
+  ensureAgentColumns(db);
 }
 
 /** schema.sql is CREATE ... IF NOT EXISTS throughout, which never alters a table that already exists. */
+function ensureAgentColumns(db: Database.Database): void {
+  const have = new Set((db.prepare("PRAGMA table_info(agents)").all() as Array<{ name: string }>).map((c) => c.name));
+  // Hashed bearer token for the remote MCP endpoint; null for agents that only ever sign.
+  if (!have.has("token_hash")) db.exec("ALTER TABLE agents ADD COLUMN token_hash TEXT");
+  db.exec("CREATE INDEX IF NOT EXISTS idx_agents_token_hash ON agents(token_hash)");
+}
+
 function ensureMerchantColumns(db: Database.Database): void {
   const have = new Set((db.prepare("PRAGMA table_info(merchants)").all() as Array<{ name: string }>).map((c) => c.name));
   const wanted: Array<[string, string]> = [

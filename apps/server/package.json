@@ -9,6 +9,8 @@
     "./fault-flags": "./src/jobs/fault-flags.ts"
   },
   "dependencies": {
+    "@fastify/cookie": "^11.0.2",
+    "@modelcontextprotocol/sdk": "1.30.0",
     "@naka/catalog": "workspace:*",
     "@naka/channels": "workspace:*",
     "@naka/db": "workspace:*",
@@ -21,7 +23,6 @@
     "@naka/razorpay": "workspace:*",
     "@naka/shared": "workspace:*",
     "fastify": "^5.2.0",
-    "@fastify/cookie": "^11.0.2",
     "zod": "^3.24.1"
   }
 }

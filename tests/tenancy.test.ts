@@ -100,8 +100,11 @@ describe("onboarding", () => {
     expect(kit.razorpay_webhook.url).toBe(`${baseUrl}/webhooks/razorpay/chappal`);
     expect(kit.razorpay_webhook.secret).toHaveLength(48);
     expect(kit.buyer_agent.private_key_pem).toContain("BEGIN PRIVATE KEY");
-    expect(kit.mcp.config.mcpServers["naka-chappal"].env.NAKA_MERCHANT).toBe("chappal");
-    expect(kit.mcp.config.mcpServers["naka-chappal"].env.NAKA_AGENT_ID).toBe(kit.buyer_agent.agent_id);
+    expect(kit.mcp.config.mcpServers["naka-chappal"].type).toBe("http");
+    expect(kit.mcp.config.mcpServers["naka-chappal"].url).toMatch(/\/mcp$/);
+    expect(kit.mcp.config.mcpServers["naka-chappal"].headers.Authorization).toBe(`Bearer ${kit.buyer_agent.mcp_token}`);
+    expect(kit.mcp.stdio.mcpServers["naka-chappal"].env.NAKA_MERCHANT).toBe("chappal");
+    expect(kit.mcp.stdio.mcpServers["naka-chappal"].env.NAKA_AGENT_ID).toBe(kit.buyer_agent.agent_id);
 
     const agent = db.prepare("SELECT merchant_id, pubkey FROM agents WHERE id = ?").get(kit.buyer_agent.agent_id) as { merchant_id: string; pubkey: string };
     expect(agent.merchant_id).toBe("chappal");
@@ -223,7 +226,8 @@ describe("console isolation", () => {
     expect(minted.status).toBe(200);
     expect(minted.body.private_key_pem).toContain("BEGIN PRIVATE KEY");
     expect(minted.body.mandate.allowed_categories.sort()).toEqual(["accessories", "footwear"]);
-    expect(minted.body.mcp.config.mcpServers["naka-chappal"].env.NAKA_AGENT_ID).toBe(minted.body.agent_id);
+    expect(minted.body.mcp.stdio.mcpServers["naka-chappal"].env.NAKA_AGENT_ID).toBe(minted.body.agent_id);
+    expect(minted.body.mcp.config.mcpServers["naka-chappal"].headers.Authorization).toBe(`Bearer ${minted.body.mcp_token}`);
 
     // The minted key really signs for this shop, and only this shop.
     const client = new NakaClient(baseUrl, minted.body.agent_id, minted.body.private_key_pem, "chappal");

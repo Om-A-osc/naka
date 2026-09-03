@@ -12,6 +12,7 @@ import { sha256hex } from "@naka/shared";
 import { env } from "../config/env.js";
 import { CatalogFileSchema } from "./catalog-schema.js";
 import { BASE_CSS, nav } from "./ui.js";
+import { issueAgentToken } from "../mcp/token.js";
 
 /** Self-serve merchant onboarding: the page a merchant lands on with a catalog and comes away from with a working shop that AI buyers can use. */
 const OnboardSchema = z
@@ -66,6 +67,7 @@ export function registerOnboardRoutes(app: FastifyInstance, db: Db) {
       const policy = Object.keys(overrides).length ? setMerchantPolicy(db, id, overrides) : policyFor(db, id).policy;
 
       const agent = registerAgent(db, { merchantId: id, name: "buyer-default", pubkeyPem: agentKeys.publicKeyPem });
+      const token = issueAgentToken(db, agent.id);
       const mandate = issueMandate(db, {
         merchant_id: id,
         agent_id: agent.id,
@@ -86,7 +88,7 @@ export function registerOnboardRoutes(app: FastifyInstance, db: Db) {
         inputs: { merchant_id: id, products: input.catalog.products.length, categories, has_razorpay_keys: !!keyId },
       });
 
-      return { agentId: agent.id, mandateId: mandate.id, policy };
+      return { agentId: agent.id, mandateId: mandate.id, policy, token };
     })();
 
     const base = env.baseUrl.replace(/\/$/, "");
@@ -103,6 +105,7 @@ export function registerOnboardRoutes(app: FastifyInstance, db: Db) {
         agent_id: kit.agentId,
         mandate_id: kit.mandateId,
         private_key_pem: agentKeys.privateKeyPem,
+        mcp_token: kit.token,
         mandate: {
           max_per_checkout_paise: kit.policy.max_per_checkout_paise,
           max_total_paise: kit.policy.max_per_checkout_paise * 10,
@@ -110,7 +113,7 @@ export function registerOnboardRoutes(app: FastifyInstance, db: Db) {
           expires_in_days: 30,
         },
       },
-      mcp: mcpConfigFor(id, kit.agentId, kit.mandateId),
+      mcp: mcpConfigFor(id, kit.agentId, kit.mandateId, kit.token),
     };
   });
 }
@@ -122,6 +125,7 @@ export function mintBuyerAgent(db: Db, merchantId: string, name = "buyer-default
   const policy = policyFor(db, merchantId).policy;
   const categories = (db.prepare("SELECT DISTINCT category FROM products WHERE merchant_id = ? AND active = 1").all(merchantId) as Array<{ category: string }>).map((r) => r.category);
   const agent = registerAgent(db, { merchantId, name, pubkeyPem: agentKeys.publicKeyPem });
+  const token = issueAgentToken(db, agent.id);
   const mandate = issueMandate(db, {
     merchant_id: merchantId,
     agent_id: agent.id,
@@ -139,18 +143,23 @@ export function mintBuyerAgent(db: Db, merchantId: string, name = "buyer-default
     agent_id: agent.id,
     mandate_id: mandate.id,
     private_key_pem: agentKeys.privateKeyPem,
+    mcp_token: token,
     mandate: { max_per_checkout_paise: policy.max_per_checkout_paise, max_total_paise: policy.max_per_checkout_paise * 10, allowed_categories: categories, expires_in_days: 30 },
   };
 }
 
-/** The `.mcp.json` block a buyer pastes to shop at this merchant from Claude Code. */
-export function mcpConfigFor(merchantId: string, agentId: string, mandateId: string) {
+/** What a buyer pastes to shop at this merchant from Claude Code. */
+export function mcpConfigFor(merchantId: string, agentId: string, mandateId: string, token: string) {
   const base = env.baseUrl.replace(/\/$/, "");
+  const name = `naka-${merchantId}`;
   return {
-    note: "Save private_key_pem to a file, then add this to .mcp.json (Claude Code) or your MCP client's config. Set NAKA_AGENT_KEY to that file's path.",
-    config: {
+    note: "Remote: paste `config` into .mcp.json (Claude Code) or run `command`; nothing to install. Local: save private_key_pem to a file and use `stdio` with NAKA_AGENT_KEY pointing at it.",
+    token,
+    config: { mcpServers: { [name]: { type: "http", url: `${base}/mcp`, headers: { Authorization: `Bearer ${token}` } } } },
+    command: `claude mcp add --transport http ${name} ${base}/mcp --header "Authorization: Bearer ${token}"`,
+    stdio: {
       mcpServers: {
-        [`naka-${merchantId}`]: {
+        [name]: {
           command: "node",
           args: ["node_modules/tsx/dist/cli.mjs", "apps/buyer/src/mcp-server.ts"],
           env: { NAKA_URL: base, NAKA_MERCHANT: merchantId, NAKA_AGENT_ID: agentId, NAKA_MANDATE_ID: mandateId, NAKA_AGENT_KEY: `/path/to/${merchantId}-agent.private.pem` },
@@ -255,12 +264,15 @@ h2{margin:8px 0}</style></head><body>${nav("onboard")}<div class="wrap">
     document.getElementById('f').style.display = 'none';
     document.getElementById('kit').innerHTML = '<div class="kitwrap"><div class="mark ok"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></div>' +
       '<h2>' + esc(d.merchant.display_name) + ' is live</h2>' +
-      '<p>Mode: <b>' + esc(d.merchant.mode) + '</b>. Save this page, the key and secret below are shown once and not stored.</p>' +
+      '<p>Mode: <b>' + esc(d.merchant.mode) + '</b>. Save this page: the token, key and secret below are shown once and not stored.</p>' +
       '<div class="card"><b>1. Your console</b><p><a href="' + d.console.url + '" target="_blank">' + d.console.url + '</a>, merchant id <code>' + esc(d.console.merchant_id) + '</code>, the password you just chose.</p></div>' +
       '<div class="card"><b>2. Razorpay dashboard → Webhooks → Add</b><p>URL: <code>' + esc(d.razorpay_webhook.url) + '</code></p><p>Secret: <code>' + esc(d.razorpay_webhook.secret) + '</code></p><p class="muted">Events: ' + d.razorpay_webhook.events.join(', ') + '</p></div>' +
       '<h3>3. Give this to an AI buyer</h3>' +
+      block('.mcp.json for Claude Code (remote, nothing to install)', JSON.stringify(d.mcp.config, null, 2), '.mcp.json') +
+      block('Or one command in a terminal', d.mcp.command, 'add-naka-mcp.txt') +
+      '<details><summary class="muted">Run the MCP server on your own machine instead (needs this repo and the private key)</summary>' +
       block('Agent private key, save as ' + d.merchant.id + '-agent.private.pem', d.buyer_agent.private_key_pem, d.merchant.id + '-agent.private.pem') +
-      block('.mcp.json for Claude Code (set NAKA_AGENT_KEY to where you saved the key)', JSON.stringify(d.mcp.config, null, 2), '.mcp.json') +
+      block('.mcp.json (local stdio; set NAKA_AGENT_KEY to where you saved the key)', JSON.stringify(d.mcp.stdio, null, 2), '.mcp.json') + '</details>' +
       '<p class="muted">Agent <code>' + esc(d.buyer_agent.agent_id) + '</code> may spend up to ₹' + (d.buyer_agent.mandate.max_per_checkout_paise/100) + ' per checkout in ' + d.buyer_agent.mandate.allowed_categories.join(', ') + ', for ' + d.buyer_agent.mandate.expires_in_days + ' days. Every checkout still needs a human to confirm on the pay page.</p>' +
       '<p><a href="/shop/' + esc(d.merchant.id) + '" target="_blank">Open your public storefront →</a> &nbsp; <a href="' + d.console.url + '" target="_blank">Open your console →</a></p></div>';
     document.querySelectorAll('.steps span').forEach(function (s, i) { s.classList.toggle('on', i === 1); });

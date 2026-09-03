@@ -2,7 +2,7 @@
 export { NakaClient } from "./mcp-client.js";
 export { claimCheck } from "./claimcheck.js";
 export { TOOLS } from "./tools-openai.js";
-export { loadSystemPrompt } from "./prompt.js";
+export { loadSystemPrompt, renderSystemPrompt } from "./prompt.js";
 export { getUpdates, sendMessage, getMe, type TelegramUpdate } from "./telegram-client.js";
 export { toTelegramHtml, toPlainText } from "./telegram-format.js";
 export { providerChain, makeClients, complete, isExhaustedQuota, type Provider } from "./llm.js";

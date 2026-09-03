@@ -135,19 +135,13 @@ footer{margin:40px 0 30px;color:var(--muted);font-size:.85em;border-top:1px soli
   <h2 class="reveal">What a buyer agent can do here</h2>
   <div class="tools reveal" data-delay="1">${tools.map(([n, d]) => `<div><code>${n}</code><span>${d}</span></div>`).join("")}</div>
 
-  <h2 class="reveal">Connect from Claude Code <small>mint a buyer agent in your console, save its key, paste this into <code>.mcp.json</code>. The demo shop here is <b>${s.defaultShop}</b></small></h2>
+  <h2 class="reveal">Connect from Claude Code <small>mint a buyer agent in your console, drop its token into this snippet, nothing to install. The demo shop here is <b>${s.defaultShop}</b></small></h2>
   <pre class="reveal" data-delay="1"><button class="copy" onclick="copySnippet(this)">Copy</button><code id="snippet">{
   "mcpServers": {
-    "naka": {
-      "command": "node",
-      "args": ["node_modules/tsx/dist/cli.mjs", "apps/buyer/src/mcp-server.ts"],
-      "env": {
-        "NAKA_URL": "${base}",
-        "NAKA_MERCHANT": "${s.defaultId}",
-        "NAKA_AGENT_ID": "&lt;from your kit&gt;",
-        "NAKA_MANDATE_ID": "&lt;from your kit&gt;",
-        "NAKA_AGENT_KEY": "/path/to/agent.private.pem"
-      }
+    "naka-${env.merchantId}": {
+      "type": "http",
+      "url": "${env.baseUrl.replace(/\/$/, "")}/mcp",
+      "headers": { "Authorization": "Bearer &lt;token from Console → Buyer agents → Mint&gt;" }
     }
   }
 }</code></pre>
@@ -186,7 +180,7 @@ footer{margin:40px 0 30px;color:var(--muted);font-size:.85em;border-top:1px soli
     var words=["coffee roaster","shoe store","bookshop","bakery","pharmacy","sari boutique"], i=0, el=document.getElementById('rot');
     setInterval(function(){ el.classList.add('out'); setTimeout(function(){ i=(i+1)%words.length; el.textContent=words[i]; el.classList.remove('out'); el.classList.add('pre'); requestAnimationFrame(function(){ requestAnimationFrame(function(){ el.classList.remove('pre'); }); }); },360); }, 2600);
   })();
-  function copySnippet(btn){ navigator.clipboard.writeText(document.getElementById('snippet').textContent).then(function(){ btn.textContent='Copied'; nkToast('Snippet copied, fill in your agent id, mandate id and key path','ok'); setTimeout(function(){ btn.textContent='Copy'; },1500); }); }
+  function copySnippet(btn){ navigator.clipboard.writeText(document.getElementById('snippet').textContent).then(function(){ btn.textContent='Copied'; nkToast('Snippet copied. Paste the token from your console','ok'); setTimeout(function(){ btn.textContent='Copy'; },1500); }); }
 </script>
 </body></html>`;
 }
