@@ -55,14 +55,26 @@ export function searchCatalog(db: Db, args: SearchArgs): SearchResult[] {
     return true;
   };
 
-  // 1) exact alias match
+  // 1) alias match, ranked by how many aliases the query hit.
   const words = args.query.toLowerCase().trim();
   if (words) {
-    const aliasRows = db
+    const hits = new Map<string, { n: number; weight: number }>();
+    for (const h of db
+      .prepare(
+        `SELECT variant_id, COUNT(*) AS n, SUM(LENGTH(alias)) AS weight FROM variant_aliases WHERE alias = ? OR ? LIKE '%' || alias || '%' GROUP BY variant_id`
+      )
+      .all(words, words) as Array<{ variant_id: string; n: number; weight: number }>) {
+      hits.set(h.variant_id, { n: h.n, weight: h.weight });
+    }
+    const aliasRows = (db
       .prepare(
         `${BASE_SELECT} AND v.id IN (SELECT variant_id FROM variant_aliases WHERE alias = ? OR ? LIKE '%' || alias || '%')`
       )
-      .all(words, words) as any[];
+      .all(words, words) as any[]).sort((a, b) => {
+      const ha = hits.get(a.variant_id) ?? { n: 0, weight: 0 };
+      const hb = hits.get(b.variant_id) ?? { n: 0, weight: 0 };
+      return hb.n - ha.n || hb.weight - ha.weight || a.price_paise - b.price_paise;
+    });
     for (const row of aliasRows) {
       if (!filterOk(row) || seen.has(row.variant_id)) continue;
       seen.add(row.variant_id);
