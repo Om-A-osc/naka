@@ -14,10 +14,10 @@ const GLYPH = `
 export const LOGO_MARK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Naka"><defs>${GRADIENT}</defs><rect width="256" height="256" rx="56" fill="url(#nkg)"/>${GLYPH}</svg>`;
 
 /** Horizontal wordmark for the README, slides and the video title card. */
-export const LOGO_WORDMARK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 200" role="img" aria-label="Naka, merchant storefront for AI buyers"><defs>${GRADIENT}</defs>
+export const LOGO_WORDMARK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 200" role="img" aria-label="Naka, merchant storefront for AI buyers"><defs>${GRADIENT}</defs>
   <g transform="translate(20 20) scale(0.625)"><rect width="256" height="256" rx="56" fill="url(#nkg)"/>${GLYPH}</g>
   <text x="212" y="112" font-family="Inter, 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif" font-weight="800" font-size="92" letter-spacing="-3" fill="#14181f">Naka</text>
-  <text x="216" y="158" font-family="Inter, 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif" font-weight="500" font-size="26" fill="#5f6b7a">the checkpoint between AI buyers and your money</text>
+  <text x="216" y="158" font-family="Inter, 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif" font-weight="500" font-size="25" fill="#5f6b7a">the checkpoint between AI buyers and your money</text>
 </svg>`;
 
 /** Inline mark for navigation bars and headers; `size` in CSS pixels. */
