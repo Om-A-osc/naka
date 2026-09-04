@@ -4,6 +4,7 @@ import { getMerchant } from "@naka/engine";
 import { formatInr } from "@naka/shared";
 import { env } from "../config/env.js";
 import { BASE_CSS, nav } from "./ui.js";
+import { FAVICON_LINK } from "./logo.js";
 
 /** A merchant's public storefront page, the link a shop shares. */
 export function registerShopRoutes(app: FastifyInstance, db: Db) {
@@ -35,7 +36,7 @@ function esc(s: string): string {
 }
 
 function shell(title: string, body: string, extraCss: string): string {
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title>
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${FAVICON_LINK}<title>${esc(title)}</title>
 <style>${BASE_CSS}
 body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--bg);overflow-x:hidden}
 .wrap{max-width:1100px;margin:0 auto;padding:0 20px;position:relative}

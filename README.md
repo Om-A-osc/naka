@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/naka-logo.svg" alt="Naka" width="460"></p>
+
 # Naka
 
 A merchant-side storefront for AI buyer agents, built for the Razorpay AI

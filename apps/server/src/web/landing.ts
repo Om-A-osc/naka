@@ -3,9 +3,15 @@ import type { Db } from "@naka/db";
 import { merchantDisplayName } from "@naka/engine";
 import { env } from "../config/env.js";
 import { BASE_CSS, nav } from "./ui.js";
+import { FAVICON_LINK, LOGO_MARK_SVG, LOGO_WORDMARK_SVG } from "./logo.js";
 
 /** The front door. Says what Naka is in one screen, routes a returning merchant to sign in and a new one to onboard. */
 export function registerLandingRoutes(app: FastifyInstance, db: Db) {
+  const svg = (body: string) => async (_req: unknown, reply: any) => reply.type("image/svg+xml").header("Cache-Control", "public, max-age=86400").send(body);
+  app.get("/favicon.svg", svg(LOGO_MARK_SVG));
+  app.get("/logo.svg", svg(LOGO_MARK_SVG));
+  app.get("/logo-wordmark.svg", svg(LOGO_WORDMARK_SVG));
+
   app.get("/", async (_req, reply) => {
     const merchants = (db.prepare("SELECT COUNT(*) AS n FROM merchants").get() as { n: number }).n;
     const paid = (db.prepare("SELECT COUNT(*) AS n FROM checkouts WHERE status = 'completed'").get() as { n: number }).n;
@@ -39,7 +45,7 @@ function landingPage(s: { merchants: number; paid: number; ledger: number; agent
     ["Ledger", "hash-chained, append-only, verifiable from the console", "code"],
   ];
   const actorLabel = { model: "model proposes", code: "deterministic code", gate: "policy gate", human: "human decides", rzp: "Razorpay" };
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Naka</title>
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${FAVICON_LINK}<title>Naka</title>
 <meta name="description" content="Naka makes any Razorpay merchant transactable by AI buyer agents, every money action explainable, bounded and gated.">
 <style>${BASE_CSS}
 body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--bg);overflow-x:hidden}

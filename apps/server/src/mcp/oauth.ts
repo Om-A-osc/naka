@@ -5,6 +5,7 @@ import { getMerchant, merchantDisplayName, policyFor } from "@naka/engine";
 import { formatInr } from "@naka/shared";
 import { env } from "../config/env.js";
 import { BASE_CSS } from "../web/ui.js";
+import { FAVICON_LINK, logoMark } from "../web/logo.js";
 import { mintBuyerAgent } from "../web/onboard.js";
 import { hashToken, issueAgentToken } from "./token.js";
 
@@ -229,11 +230,11 @@ function issueTokens(db: Db, clientId: string, agentId: string) {
 }
 
 function shell(title: string, body: string): string {
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title>
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${FAVICON_LINK}<title>${esc(title)}</title>
 <style>${BASE_CSS}
 body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--bg)}
 .wrap{max-width:520px;margin:48px auto;padding:0 18px;animation:nk-fade-up .45s}
-.brand{font-weight:800;display:inline-flex;align-items:center;gap:8px;margin-bottom:18px}.brand .dot{width:10px;height:10px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2))}
+.brand{font-weight:800;display:inline-flex;align-items:center;gap:8px;margin-bottom:18px}.brand .nk-mark{width:26px;height:26px;border-radius:7px}
 .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px;box-shadow:var(--shadow)}
 h1{font-size:1.3em;margin:0 0 8px;letter-spacing:-.01em}p{margin:8px 0;line-height:1.5}.muted{color:var(--muted);font-size:.92em}
 ul{margin:8px 0 14px;padding-left:20px}li{margin:4px 0}
@@ -242,7 +243,7 @@ button{font:inherit;font-weight:600;padding:11px 18px;border-radius:9px;cursor:p
 button.allow{background:var(--accent);color:#fff;box-shadow:0 10px 24px -12px rgba(43,108,176,.8)}button.deny{background:#fff;color:var(--accent)}
 details{margin-top:14px}summary{cursor:pointer;color:var(--muted);font-size:.9em}input{width:100%;box-sizing:border-box;margin-top:8px;padding:9px 10px;border:1px solid var(--line);border-radius:8px;font:inherit}
 .pill{display:inline-block;background:#eef2f7;border-radius:999px;padding:2px 10px;font-size:.8em}
-</style></head><body><div class="wrap"><div class="brand"><span class="dot"></span>Naka</div>${body}</div></body></html>`;
+</style></head><body><div class="wrap"><div class="brand">${logoMark(26)}Naka</div>${body}</div></body></html>`;
 }
 
 function consentPage(db: Db, a: Authz): string {

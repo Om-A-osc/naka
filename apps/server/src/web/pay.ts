@@ -8,13 +8,14 @@ import { formatInr } from "@naka/shared";
 import { insertLedgerRow } from "@naka/ledger";
 import { env } from "../config/env.js";
 import { BASE_CSS } from "./ui.js";
+import { FAVICON_LINK, logoMark } from "./logo.js";
 
 function layout(title: string, body: string, brand = "Naka"): string {
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title>
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${FAVICON_LINK}<title>${title}</title>
 <style>${BASE_CSS}
 body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--bg)}
 .top{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;background:#fff;border-bottom:1px solid var(--line)}
-.top .b{font-weight:800;display:inline-flex;align-items:center;gap:8px}.top .b .dot{width:10px;height:10px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2))}
+.top .b{font-weight:800;display:inline-flex;align-items:center;gap:8px}.top .b .nk-mark{width:22px;height:22px;border-radius:6px}
 .top small{color:var(--muted);font-size:.85em}
 .page{max-width:620px;margin:28px auto;padding:0 16px;animation:nk-fade-up .45s}
 h2{margin:0 0 6px;letter-spacing:-.01em}
@@ -35,7 +36,7 @@ button:hover{transform:translateY(-1px)}button.fail{background:var(--bad);box-sh
 .spinner.big{width:30px;height:30px;border-width:3px;margin:0}
 @media(prefers-reduced-motion:reduce){.mark,.mark svg{animation:none;stroke-dashoffset:0}}
 </style></head><body>
-<div class="top"><span class="b"><span class="dot"></span>${brand}</span><small>Secure checkout · Razorpay test mode</small></div>
+<div class="top"><span class="b">${logoMark(22)}${brand}</span><small>Secure checkout · Razorpay test mode</small></div>
 <div class="page">${body}</div>
 </body></html>`;
 }

@@ -20,6 +20,7 @@ import { env } from "./config/env.js";
 import { Tenants } from "./tenants.js";
 import { TelegramHost } from "./channels/telegram-host.js";
 import { BASE_CSS, nav } from "./web/ui.js";
+import { FAVICON_LINK } from "./web/logo.js";
 
 export async function buildServer() {
   const db = getDb();
@@ -98,7 +99,7 @@ export async function buildServer() {
 }
 
 function notFoundPage(): string {
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Not found, Naka</title>
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${FAVICON_LINK}<title>Not found, Naka</title>
 <style>${BASE_CSS}body{margin:0;font-family:system-ui,sans-serif;background:var(--bg);color:var(--ink)}.wrap{max-width:560px;margin:80px auto;padding:0 20px;text-align:center;animation:nk-fade-up .5s}h1{font-size:4em;margin:0;letter-spacing:-.04em;background:linear-gradient(120deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}p{color:var(--muted)}a.b{display:inline-block;margin:6px;padding:9px 14px;border-radius:8px;background:var(--accent);color:#fff;text-decoration:none;font-weight:600}a.g{background:#fff;color:var(--accent);border:1px solid var(--accent)}</style></head>
 <body>${nav("")}<div class="wrap"><h1>404</h1><p>There is nothing at this address. The shop, the console and onboarding are all one click away.</p><a class="b" href="/">Home</a><a class="b g" href="/shop">Demo shop</a><a class="b g" href="/console">Console</a></div></body></html>`;
 }

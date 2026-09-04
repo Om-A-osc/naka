@@ -15,6 +15,7 @@ import { merchantDisplayName, policyFor, merchantCredentials } from "@naka/engin
 import { mintBuyerAgent, mcpConfigFor } from "./onboard.js";
 import { CatalogFileSchema } from "./catalog-schema.js";
 import { BASE_CSS, nav } from "./ui.js";
+import { FAVICON_LINK } from "./logo.js";
 
 /** Console sessions are per merchant. */
 function passwordHashFor(db: Db, merchantId: string): string | null {
@@ -439,7 +440,7 @@ function toCsv(rows: any[]): string {
 }
 
 function loginPage(): string {
-  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${BASE_CSS}</style><title>Naka console</title>
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${FAVICON_LINK}<style>${BASE_CSS}</style><title>Naka console</title>
   <style>body{font-family:system-ui;margin:0;background:var(--bg)}.box{max-width:420px;margin:60px auto;padding:24px;background:#fff;border:1px solid var(--line);border-radius:10px}label{display:block;margin:12px 0 4px;font-weight:600}
   input{width:100%;box-sizing:border-box;padding:8px;border:1px solid #ccc;border-radius:6px;font:inherit}button{margin-top:16px;background:#2b6cb0;color:#fff;border:none;padding:10px 18px;border-radius:6px;font-size:1em}
   .muted{color:#666;font-size:0.9em}</style></head><body>${nav("console")}<div class="box">
@@ -458,7 +459,7 @@ function loginPage(): string {
 }
 
 function dashboardPage(): string {
-  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${BASE_CSS}</style><title>Naka console</title>
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${FAVICON_LINK}<style>${BASE_CSS}</style><title>Naka console</title>
   <style>
   body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--bg)}
   .app{display:grid;grid-template-columns:230px 1fr;min-height:calc(100vh - 53px)}

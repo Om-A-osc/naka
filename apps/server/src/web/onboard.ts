@@ -12,6 +12,7 @@ import { sha256hex } from "@naka/shared";
 import { env } from "../config/env.js";
 import { CatalogFileSchema } from "./catalog-schema.js";
 import { BASE_CSS, nav } from "./ui.js";
+import { FAVICON_LINK } from "./logo.js";
 import { issueAgentToken } from "../mcp/token.js";
 
 /** Self-serve merchant onboarding: the page a merchant lands on with a catalog and comes away from with a working shop that AI buyers can use. */
@@ -196,7 +197,7 @@ function onboardPage(): string {
     frequently_bought_with: [{ variant_id: "var_runner_8", addon_variant_id: "var_socks_std" }],
     coupons: [{ code: "FIRSTRUN", pct: 10, max_paise: 50000, min_order_paise: 100000 }],
   };
-  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${BASE_CSS}</style><title>Naka, onboard your shop</title>
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${FAVICON_LINK}<style>${BASE_CSS}</style><title>Naka, onboard your shop</title>
 <style>body{font-family:system-ui,sans-serif;margin:0;color:#1a1a1a;background:var(--bg)}.wrap{max-width:860px;margin:24px auto;padding:0 16px}
 label{display:block;margin:12px 0 4px;font-weight:600}input,textarea{width:100%;box-sizing:border-box;padding:8px;border:1px solid #ccc;border-radius:6px;font:inherit}
 textarea{font-family:ui-monospace,monospace;font-size:0.85em;min-height:220px}.row{display:grid;grid-template-columns:1fr 1fr;gap:16px}

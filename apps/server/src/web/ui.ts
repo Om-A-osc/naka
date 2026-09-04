@@ -1,3 +1,5 @@
+import { logoMark } from "./logo.js";
+
 /** The shared shell for every merchant-facing page: one navigation bar, one set of base styles, and the small motion/toast runtime the pages share. */
 export const BASE_CSS = `
   :root{--ink:#14181f;--muted:#5f6b7a;--line:#e6e8ec;--bg:#f6f7f9;--card:#fff;--accent:#2b6cb0;--accent2:#7c3aed;--ok:#2f855a;--warn:#b7791f;--bad:#c53030;--shadow:0 10px 30px -12px rgba(20,24,31,.18)}
@@ -6,7 +8,8 @@ export const BASE_CSS = `
   .nk-nav{position:sticky;top:0;z-index:50;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 20px;background:rgba(255,255,255,.85);backdrop-filter:saturate(180%) blur(10px);-webkit-backdrop-filter:saturate(180%) blur(10px);border-bottom:1px solid transparent;font-family:system-ui,sans-serif;transition:border-color .25s,box-shadow .25s}
   .nk-nav.scrolled{border-bottom-color:var(--line);box-shadow:0 6px 24px -18px rgba(20,24,31,.35)}
   .nk-nav .brand{font-weight:800;font-size:1.15em;color:var(--ink);text-decoration:none;letter-spacing:-.01em;display:inline-flex;align-items:center;gap:8px}
-  .nk-nav .brand .dot{width:10px;height:10px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 0 0 4px rgba(43,108,176,.12)}
+  .nk-nav .brand .nk-mark{width:24px;height:24px;border-radius:7px;box-shadow:0 4px 12px -4px rgba(43,108,176,.6)}
+  .nk-mark{display:inline-block;vertical-align:middle}
   .nk-nav .brand small{font-weight:400;color:var(--muted);font-size:.7em;margin-left:4px}
   .nk-nav .links a{color:var(--muted);text-decoration:none;margin-left:16px;font-size:.95em;padding:6px 0;border-bottom:2px solid transparent;transition:color .2s,border-color .2s}
   .nk-nav .links a:hover{color:var(--ink)}
@@ -76,7 +79,7 @@ export function nav(active: NavPage): string {
   const link = (href: string, label: string, key: NavPage, cls = "") =>
     `<a href="${href}" class="${active === key ? "on " : ""}${cls}">${label}</a>`;
   return `<nav class="nk-nav">
-    <a class="brand" href="/"><span class="dot"></span>Naka <small>merchant storefront for AI buyers</small></a>
+    <a class="brand" href="/">${logoMark(24)}Naka <small>merchant storefront for AI buyers</small></a>
     <span class="links">${link("/", "Home", "home")}${link("/shop", "Demo shop", "shop")}${link("/console", "Console", "console")}${link("/onboard", "Onboard your shop", "onboard", "cta")}</span>
   </nav><script>${UI_JS}</script>`;
 }
