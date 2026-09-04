@@ -78,7 +78,7 @@ function shopPage(s: { id: string; name: string; telegram: string | null; produc
       <h3>Buy here with your assistant</h3>
       ${s.telegram ? `<a class="btn tg" href="https://t.me/${esc(s.telegram)}" target="_blank" rel="noopener"><span class="live-dot"></span>Chat with @${esc(s.telegram)} on Telegram</a><p class="muted">The shop's own bot. Ask for what you want, get a pay link.</p>` : `<p class="muted">This shop has not connected a Telegram bot yet.</p>`}
       <h4>Claude Code / any MCP client</h4>
-      <p class="muted">Ask the shop for an agent token, then add this to <code>.mcp.json</code>. Nothing to install:</p>
+      <p class="muted">Claude.ai, Claude Desktop or ChatGPT: add <code>${base}/mcp/${esc(s.id)}</code> as a custom connector and click Allow. Claude Code with a token:</p>
       <pre><button class="copy" onclick="copySnippet(this)">Copy</button><code id="snippet">{
   "mcpServers": {
     "naka-${esc(s.id)}": {

@@ -153,7 +153,9 @@ export function mcpConfigFor(merchantId: string, agentId: string, mandateId: str
   const base = env.baseUrl.replace(/\/$/, "");
   const name = `naka-${merchantId}`;
   return {
-    note: "Remote: paste `config` into .mcp.json (Claude Code) or run `command`; nothing to install. Local: save private_key_pem to a file and use `stdio` with NAKA_AGENT_KEY pointing at it.",
+    note: "Easiest: add `connector_url` as a custom connector in Claude.ai, Claude Desktop or ChatGPT and click Allow (OAuth; no token to paste). Claude Code: `command_oauth`, then /mcp to sign in, or `config` with the token for a headless setup. Local: save private_key_pem to a file and use `stdio` with NAKA_AGENT_KEY pointing at it.",
+    connector_url: `${base}/mcp/${merchantId}`,
+    command_oauth: `claude mcp add --transport http ${name} ${base}/mcp/${merchantId}`,
     token,
     config: { mcpServers: { [name]: { type: "http", url: `${base}/mcp`, headers: { Authorization: `Bearer ${token}` } } } },
     command: `claude mcp add --transport http ${name} ${base}/mcp --header "Authorization: Bearer ${token}"`,
@@ -268,7 +270,8 @@ h2{margin:8px 0}</style></head><body>${nav("onboard")}<div class="wrap">
       '<div class="card"><b>1. Your console</b><p><a href="' + d.console.url + '" target="_blank">' + d.console.url + '</a>, merchant id <code>' + esc(d.console.merchant_id) + '</code>, the password you just chose.</p></div>' +
       '<div class="card"><b>2. Razorpay dashboard → Webhooks → Add</b><p>URL: <code>' + esc(d.razorpay_webhook.url) + '</code></p><p>Secret: <code>' + esc(d.razorpay_webhook.secret) + '</code></p><p class="muted">Events: ' + d.razorpay_webhook.events.join(', ') + '</p></div>' +
       '<h3>3. Give this to an AI buyer</h3>' +
-      block('.mcp.json for Claude Code (remote, nothing to install)', JSON.stringify(d.mcp.config, null, 2), '.mcp.json') +
+      '<div class="card"><b>Connect from the Claude app, no token needed</b><p>Claude.ai or Claude Desktop → Settings → Connectors → Add custom connector → URL <code>' + esc(d.mcp.connector_url) + '</code> → Connect → <b>Allow</b>. ChatGPT (developer mode) takes the same URL. Claude Code: <code>' + esc(d.mcp.command_oauth) + '</code> then <code>/mcp</code> to sign in.</p><p class="muted">Each person who allows gets their own buyer agent under your policy; you can see and suspend them under Buyer agents.</p></div>' +
+      block('.mcp.json for Claude Code with a fixed token (headless setups)', JSON.stringify(d.mcp.config, null, 2), '.mcp.json') +
       block('Or one command in a terminal', d.mcp.command, 'add-naka-mcp.txt') +
       '<details><summary class="muted">Run the MCP server on your own machine instead (needs this repo and the private key)</summary>' +
       block('Agent private key, save as ' + d.merchant.id + '-agent.private.pem', d.buyer_agent.private_key_pem, d.merchant.id + '-agent.private.pem') +

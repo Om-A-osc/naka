@@ -47,6 +47,14 @@ export function runTool(db: Db, ctx: ToolContext, name: ToolName, rawArgs: unkno
   const agentId = ctx.agentId;
   if (!agentId) return fail(401, "UNAUTHENTICATED", "this tool needs an identified agent");
 
+  // A checkout id is not a capability.
+  const owned = (checkoutId: string): ToolOutcome | null => {
+    const view = getCheckout(db, checkoutId);
+    if (!view) return fail(404, "NOT_FOUND");
+    if (view.agent_id !== agentId) return fail(403, "FORBIDDEN", "this checkout belongs to another agent");
+    return null;
+  };
+
   const escalate = (checkoutId: string, totalPaise: number, explanation: string) =>
     void notifyMerchantEscalation(db, ctx.merchantId, `Checkout ${checkoutId} needs a human decision (₹${(totalPaise / 100).toFixed(2)}): ${explanation}`);
 
@@ -80,7 +88,7 @@ export function runTool(db: Db, ctx: ToolContext, name: ToolName, rawArgs: unkno
       }
       case "suggest_addons": {
         const a = SuggestAddonsSchema.parse(args);
-        return ok({ candidates: suggestAddons(db, a.checkout_id) });
+        return owned(a.checkout_id) ?? ok({ candidates: suggestAddons(db, a.checkout_id) });
       }
       case "complete_checkout": {
         const a = CompleteCheckoutSchema.parse(args);
@@ -89,7 +97,7 @@ export function runTool(db: Db, ctx: ToolContext, name: ToolName, rawArgs: unkno
       }
       case "cancel_checkout": {
         const a = CancelCheckoutSchema.parse(args);
-        return ok(cancelCheckout(db, { checkoutId: a.checkout_id, reason: a.reason }));
+        return owned(a.checkout_id) ?? ok(cancelCheckout(db, { checkoutId: a.checkout_id, reason: a.reason }));
       }
       default:
         return fail(404, "UNKNOWN_TOOL", String(name));

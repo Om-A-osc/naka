@@ -135,7 +135,7 @@ footer{margin:40px 0 30px;color:var(--muted);font-size:.85em;border-top:1px soli
   <h2 class="reveal">What a buyer agent can do here</h2>
   <div class="tools reveal" data-delay="1">${tools.map(([n, d]) => `<div><code>${n}</code><span>${d}</span></div>`).join("")}</div>
 
-  <h2 class="reveal">Connect from Claude Code <small>mint a buyer agent in your console, drop its token into this snippet, nothing to install. The demo shop here is <b>${s.defaultShop}</b></small></h2>
+  <h2 class="reveal">Connect from Claude Code <small>in Claude.ai or Claude Desktop just add <code>${env.baseUrl.replace(/\/$/, "")}/mcp/${env.merchantId}</code> as a custom connector and click Allow. For Claude Code, this snippet with a token from the console. The demo shop here is <b>${s.defaultShop}</b></small></h2>
   <pre class="reveal" data-delay="1"><button class="copy" onclick="copySnippet(this)">Copy</button><code id="snippet">{
   "mcpServers": {
     "naka-${env.merchantId}": {

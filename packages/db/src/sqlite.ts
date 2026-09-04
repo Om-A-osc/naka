@@ -20,9 +20,39 @@ export function migrate(db: Database.Database): void {
   db.exec(sql);
   ensureMerchantColumns(db);
   ensureAgentColumns(db);
+  ensureOAuthTables(db);
 }
 
 /** schema.sql is CREATE ... IF NOT EXISTS throughout, which never alters a table that already exists. */
+/** Naka is the OAuth authorization server for its own MCP endpoint; these hold clients, codes and refresh tokens. */
+function ensureOAuthTables(db: Database.Database): void {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS oauth_clients (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      redirect_uris TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+    );
+    CREATE TABLE IF NOT EXISTS oauth_codes (
+      code_hash TEXT PRIMARY KEY,
+      client_id TEXT NOT NULL,
+      redirect_uri TEXT NOT NULL,
+      code_challenge TEXT NOT NULL,
+      agent_id TEXT NOT NULL,
+      merchant_id TEXT NOT NULL,
+      expires_at INTEGER NOT NULL,
+      used INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE TABLE IF NOT EXISTS oauth_refresh_tokens (
+      token_hash TEXT PRIMARY KEY,
+      client_id TEXT NOT NULL,
+      agent_id TEXT NOT NULL,
+      revoked INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+    );
+  `);
+}
+
 function ensureAgentColumns(db: Database.Database): void {
   const have = new Set((db.prepare("PRAGMA table_info(agents)").all() as Array<{ name: string }>).map((c) => c.name));
   // Hashed bearer token for the remote MCP endpoint; null for agents that only ever sign.

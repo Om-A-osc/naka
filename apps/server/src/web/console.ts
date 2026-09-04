@@ -531,6 +531,7 @@ function dashboardPage(): string {
 
     <section class="page" id="p-agents">
       <div class="card"><h3>Buyer agents <span><button onclick="mint()">Mint a buyer agent</button></span></h3>
+    <p class="muted">Connector URL for any MCP client with a connector UI (Claude.ai, Claude Desktop, ChatGPT): <code id="connectorUrl"></code>. Whoever adds it and clicks Allow gets their own agent here, under your policy.</p>
         <p class="muted">Each agent holds its own Ed25519 key and buys under a mandate you control. Minting returns a key once, plus a ready <code>.mcp.json</code> block for Claude Code.</p>
         <div id="kit"></div><div id="agents"></div></div>
     </section>
@@ -620,6 +621,7 @@ function dashboardPage(): string {
     async function refresh() {
       const s = await j('/api/console/stats'); if (!s.merchant) return;
       document.getElementById('sName').textContent = s.merchant.display_name; document.getElementById('sId').textContent = s.merchant.id; document.getElementById('sShop').href = '/shop/' + encodeURIComponent(s.merchant.id);
+      const cu = document.getElementById('connectorUrl'); if (cu) cu.textContent = location.origin + '/mcp/' + s.merchant.id;
       const mode = document.getElementById('mode'); mode.textContent = s.merchant.mode === 'real' ? 'Razorpay test mode' : 'simulated payments'; mode.className = 'badge ' + s.merchant.mode;
       document.getElementById('clock').textContent = 'updated ' + new Date().toLocaleTimeString('en-IN');
       document.getElementById('kill').style.display = s.policy.kill_switch ? 'block' : 'none';
@@ -729,6 +731,7 @@ function dashboardPage(): string {
         '<div style="border:1px dashed var(--accent);border-radius:10px;padding:12px 14px;margin-bottom:12px"><b>New agent ' + esc(k.agent_id) + '</b>. The token and key below are shown once.<br>' +
         '<span class="muted">Mandate: up to ' + rs(k.mandate.max_per_checkout_paise) + ' per checkout in ' + esc(k.mandate.allowed_categories.join(', ')) + ' for ' + k.mandate.expires_in_days + ' days. Every checkout still needs a human on the pay page.</span>' +
         '<p><button class="sm" onclick="cp(\\'mcp\\')">Copy .mcp.json (remote)</button><button class="ghost sm" onclick="cp(\\'cmd\\')">Copy claude mcp add command</button> <button class="ghost sm" onclick="dl(\\'pem\\',\\'' + esc(k.agent_id) + '.private.pem\\')">Download private key (local stdio only)</button></p>' +
+        '<p><b>No token needed in the Claude app:</b> Settings → Connectors → Add custom connector → <code>' + esc(k.mcp.connector_url) + '</code> → Allow. Claude Code: <code>' + esc(k.mcp.command_oauth) + '</code> then /mcp. The token below is for headless setups.</p>' +
         '<pre id="mcp">' + esc(JSON.stringify(k.mcp.config, null, 2)) + '</pre><pre id="cmd">' + esc(k.mcp.command) + '</pre>' +
         '<details><summary class="muted">Private key and local stdio config (only if the buyer runs the MCP server on their own machine)</summary><pre id="pem">' + esc(k.private_key_pem) + '</pre><pre>' + esc(JSON.stringify(k.mcp.stdio, null, 2)) + '</pre></details></div>';
       refresh();

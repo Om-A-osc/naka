@@ -3,10 +3,11 @@ import { z, ZodError } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import type { Db } from "@naka/db";
-import { merchantDisplayName } from "@naka/engine";
+import { getMerchant, merchantDisplayName } from "@naka/engine";
 import { TOOLS, renderSystemPrompt } from "@naka/channels";
 import { runTool, type ToolContext, type ToolName, type ToolOutcome } from "./dispatch.js";
 import { hashToken } from "./token.js";
+import { wwwAuthenticate } from "./oauth.js";
 
 /** The merchant's storefront as a remote MCP server: POST /mcp speaks Streamable HTTP. */
 type Principal = { agentId: string; agentName: string; merchantId: string; mandateId: string };
@@ -26,9 +27,16 @@ export function registerRemoteMcpRoutes(app: FastifyInstance, db: Db) {
     return { agentId: agent.id, agentName: agent.name, merchantId: agent.merchant_id, mandateId: mandate.id };
   };
 
-  app.post("/mcp", async (req, reply) => {
+  // /mcp binds to whatever shop the token belongs to; /mcp/<merchant id> is the URL a shop hands out.
+  const handle = (merchantFromUrl?: string) => async (req: FastifyRequest, reply: FastifyReply) => {
     const who = authenticate(req);
-    if ("status" in who) return reply.code(who.status).send({ jsonrpc: "2.0", error: { code: -32001, message: `${who.code}: ${who.message}` }, id: null });
+    if ("status" in who) {
+      if (who.status === 401) reply.header("WWW-Authenticate", wwwAuthenticate(merchantFromUrl));
+      return reply.code(who.status).send({ jsonrpc: "2.0", error: { code: -32001, message: `${who.code}: ${who.message}` }, id: null });
+    }
+    if (merchantFromUrl && who.merchantId !== merchantFromUrl) {
+      return reply.code(403).send({ jsonrpc: "2.0", error: { code: -32001, message: "WRONG_MERCHANT: this token belongs to a different shop" }, id: null });
+    }
 
     const server = buildMcpServer(db, who);
     const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
@@ -39,12 +47,20 @@ export function registerRemoteMcpRoutes(app: FastifyInstance, db: Db) {
     });
     await server.connect(transport);
     await transport.handleRequest(req.raw, reply.raw, req.body);
+  };
+  app.post("/mcp", handle());
+  app.post("/mcp/:merchantId", async (req, reply) => {
+    const { merchantId } = req.params as { merchantId: string };
+    if (!getMerchant(db, merchantId)) return reply.code(404).send({ jsonrpc: "2.0", error: { code: -32001, message: "UNKNOWN_MERCHANT: no such shop on this server" }, id: null });
+    return handle(merchantId)(req, reply);
   });
 
   const notAllowed = async (_req: FastifyRequest, reply: FastifyReply) =>
     reply.code(405).header("Allow", "POST").send({ jsonrpc: "2.0", error: { code: -32000, message: "Method not allowed: this MCP endpoint is stateless, use POST" }, id: null });
   app.get("/mcp", notAllowed);
   app.delete("/mcp", notAllowed);
+  app.get("/mcp/:merchantId", notAllowed);
+  app.delete("/mcp/:merchantId", notAllowed);
 }
 
 function describe(name: string): string {

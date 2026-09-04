@@ -6,6 +6,7 @@ import { createRazorpayClient, webhookSecrets, RecordedRazorpayClient } from "@n
 import { loadPolicy, releaseExpiredReservations, merchantDisplayName } from "@naka/engine";
 import { registerToolRoutes } from "./mcp/tools.js";
 import { registerRemoteMcpRoutes } from "./mcp/remote.js";
+import { registerOAuthRoutes } from "./mcp/oauth.js";
 import { registerCheckoutSessionRoutes } from "./rest/checkout-sessions.js";
 import { registerWebhookRoutes } from "./webhooks/route.js";
 import { verifyAndApplyWebhook } from "./webhooks/apply.js";
@@ -53,6 +54,7 @@ export async function buildServer() {
   const tenants = new Tenants(db, { merchantId: env.merchantId, rzp, secrets, keyId: env.keyId, keySecret: env.keySecret });
 
   registerToolRoutes(app, db);
+  registerOAuthRoutes(app, db);
   registerRemoteMcpRoutes(app, db);
   registerCheckoutSessionRoutes(app, db);
   await registerWebhookRoutes(app, db, tenants);
@@ -108,6 +110,12 @@ function manifest(db: Db, merchantId: string) {
     name: "naka",
     merchant: { id: merchantId, display_name: merchantDisplayName(db, merchantId) },
     storefront_url: `${base}/shop/${merchantId}`,
+    mcp: {
+      url: `${base}/mcp/${merchantId}`,
+      transport: "streamable-http",
+      auth: "OAuth 2.1 with dynamic client registration (any MCP client with a connector UI), or a bearer agent token minted in the console",
+      authorization_server: `${base}/.well-known/oauth-authorization-server`,
+    },
     channels: { telegram: tg?.telegram_bot_username ? `https://t.me/${tg.telegram_bot_username}` : null },
     description: "Merchant-side storefront for AI buyer agents (UCP-shaped, non-conformant).",
     tools: [

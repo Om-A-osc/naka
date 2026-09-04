@@ -105,28 +105,27 @@ requests there. The server needs an LLM key (`OPENROUTER_API_KEY`,
 it with a token the server is already hosting, Telegram allows one poller
 per bot.
 
-## Connect Claude Code (a real MCP server)
+## Connect from Claude, ChatGPT or Claude Code (a real remote MCP server)
 
-Every merchant on Naka is a remote MCP server at `POST /mcp` (Streamable
-HTTP). A buyer needs nothing installed: mint a buyer agent in the console
-(Buyer agents → Mint), copy the token, and either paste the kit's snippet
-into `.mcp.json`:
+Every merchant on Naka is a remote MCP server at `https://<host>/mcp/<merchant
+id>` (Streamable HTTP), and Naka is its own OAuth 2.1 authorization server
+with dynamic client registration, which is what hosted MCP clients expect.
 
-```json
-{ "mcpServers": { "naka-<merchant id>": { "type": "http", "url": "https://<host>/mcp", "headers": { "Authorization": "Bearer nk_..." } } } }
-```
+- **Claude.ai / Claude Desktop:** Settings → Connectors → Add custom
+  connector → paste the URL → Connect. Naka's consent page explains the
+  limits (per-checkout cap, categories, human confirmation) and **Allow**
+  mints a buyer agent for that person under the merchant's policy. No token
+  to copy. ChatGPT's developer-mode connectors work the same way.
+- **Claude Code:** `claude mcp add --transport http naka https://<host>/mcp/<id>`
+  then `/mcp` to sign in through the browser; or, for a headless setup,
+  paste the kit's `.mcp.json` block, which carries a fixed bearer token.
+- **Any other MCP client:** `Authorization: Bearer <agent token>` works too.
 
-or run the one-liner the kit prints:
-
-```sh
-claude mcp add --transport http naka-<merchant id> https://<host>/mcp --header "Authorization: Bearer nk_..."
-```
-
-The token names one registered agent; the server looks up its merchant
-and mandate and hands the request to the same dispatcher the signed HTTP
-tools use, so the gate, escalations, the pay page and the ledger are
-identical whichever door the buyer came in by. Tokens are stored hashed,
-and suspending the agent in the console turns its token off at once.
+Whichever way the token was obtained, `/mcp` resolves it to one registered
+agent, its merchant and its mandate, and hands the call to the same
+dispatcher the signed HTTP tools use, so the gate, escalations, the pay
+page and the ledger are identical. Tokens are stored hashed; suspending an
+agent in the console turns its token off at once.
 
 `apps/buyer/src/mcp-server.ts` is the local alternative: a stdio MCP
 server that holds the agent's Ed25519 private key and signs every call

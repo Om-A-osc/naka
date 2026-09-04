@@ -125,11 +125,28 @@ describe("remote MCP endpoint", () => {
 
   it("one merchant's token cannot see another merchant's catalog", async () => {
     const coffee = await connect(coffeeToken);
-    const shoes = payload(await coffee.callTool({ name: "search_catalog", arguments: { query: "socks" } }));
-    expect(shoes.results.some((r: any) => r.title === "Ankle Socks")).toBe(false);
+    const seen = payload(await coffee.callTool({ name: "search_catalog", arguments: { query: "socks" } }));
+    expect(seen.results.some((r: any) => r.title === "Ankle Socks")).toBe(false);
     const foreign = await coffee.callTool({ name: "create_checkout", arguments: { line_items: [{ variant_id: "var_socks_std", quantity: 1 }] } });
     expect(foreign.isError).toBe(true);
     expect(payload(foreign).error.code).toBe("UNKNOWN_VARIANT");
+
+    // A checkout id is not a capability: the shoe shop's open cart cannot be cancelled, read, upsold on or completed by another agent that knows its id.
+    const shoes = await connect(shoeToken);
+    const cart = payload(await shoes.callTool({ name: "create_checkout", arguments: { line_items: [{ variant_id: "var_socks_std", quantity: 1 }] } }));
+    for (const [name, args] of [
+      ["cancel_checkout", { checkout_id: cart.checkout_id, reason: "not mine" }],
+      ["suggest_addons", { checkout_id: cart.checkout_id }],
+      ["get_checkout", { checkout_id: cart.checkout_id }],
+      ["complete_checkout", { checkout_id: cart.checkout_id, line_items_hash: cart.line_items_hash }],
+    ] as const) {
+      const r = await coffee.callTool({ name, arguments: args as any });
+      expect(r.isError, name).toBe(true);
+      expect(payload(r).error.code, name).toBe("FORBIDDEN");
+    }
+    const still = payload(await shoes.callTool({ name: "get_checkout", arguments: { checkout_id: cart.checkout_id } }));
+    expect(still.status).toBe("ready_for_complete");
+    await shoes.close();
     await coffee.close();
   });
 
