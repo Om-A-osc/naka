@@ -42,6 +42,7 @@ beforeAll(async () => {
   process.env.RAZORPAY_KEY_SECRET = KEY_SECRET;
   process.env.CONSOLE_PASSWORD = "test-password";
   process.env.NAKA_BASE_URL = `http://127.0.0.1:${PORT}`;
+  process.env.RAZORPAY_WEBHOOK_SECRET = "test-webhook-secret";
 
   const { getDb } = await import("@naka/db");
   const { seedAll } = await import("../cli/seed.js");
@@ -118,6 +119,41 @@ describe("POST /api/attempts/:orderId/checkout-result", () => {
 
     const verified = db.prepare("SELECT COUNT(*) AS n FROM ledger WHERE action = 'CHECKOUT_RESULT_VERIFIED'").get() as { n: number };
     expect(verified.n).toBeGreaterThan(0);
+  });
+
+  it("the same capture arriving again by webhook and by reconciler confirms the order and never queues a refund", async () => {
+    const { checkoutId, razorpayOrderId } = await openAttempt();
+    await fetch(`${baseUrl}/api/attempts/${razorpayOrderId}/simulate`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ result: "captured" }) });
+    const row = db.prepare("SELECT * FROM rzp_payments WHERE razorpay_order_id = ? ORDER BY rowid DESC LIMIT 1").get(razorpayOrderId) as any;
+    const paymentId = row.razorpay_payment_id as string;
+
+    // 1) Checkout.js result: the browser's claim, verified and settled from the API.
+    const first = await post(razorpayOrderId, { razorpay_order_id: razorpayOrderId, razorpay_payment_id: paymentId, razorpay_signature: signCheckoutPayload(razorpayOrderId, paymentId, KEY_SECRET) });
+    expect(first.status).toBe(200);
+    expect((db.prepare("SELECT status FROM checkouts WHERE id = ?").get(checkoutId) as any).status).toBe("completed");
+
+    // 2) The webhook for the very same payment, as Razorpay sends it moments later.
+    const { signWebhookBody, webhookSecrets } = await import("@naka/razorpay");
+    const snapshot = { id: paymentId, entity: "payment", order_id: razorpayOrderId, status: "captured", captured: true, amount: row.amount, currency: "INR", method: "card", created_at: Math.floor(Date.now() / 1000) };
+    const payload = JSON.stringify({ event: "payment.captured", payload: { payment: { entity: snapshot } } });
+    const hook = await fetch(`${baseUrl}/webhooks/razorpay`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Razorpay-Signature": signWebhookBody(payload, webhookSecrets()[0]), "X-Razorpay-Event-Id": `evt_dup_${paymentId}` },
+      body: payload,
+    });
+    expect(hook.status).toBe(200);
+
+    // 3) The reconciler, polling the same payment a third time.
+    const { onPaymentCaptured } = await import("@naka/engine");
+    onPaymentCaptured(db, snapshot as any, "reconcile");
+
+    expect((db.prepare("SELECT COUNT(*) AS n FROM refunds WHERE checkout_id = ?").get(checkoutId) as any).n).toBe(0);
+    expect((db.prepare("SELECT COUNT(*) AS n FROM rzp_payments WHERE checkout_id = ?").get(checkoutId) as any).n).toBe(1);
+    expect((db.prepare("SELECT role FROM rzp_payments WHERE razorpay_payment_id = ?").get(paymentId) as any).role).toBe("primary");
+    const actions = (db.prepare("SELECT action FROM ledger WHERE checkout_id = ? ORDER BY seq").all(checkoutId) as any[]).map((r) => r.action);
+    expect(actions).not.toContain("SURPLUS_PAYMENT_CAPTURED");
+    expect(actions.filter((a) => a === "PAYMENT_CAPTURE_CONFIRMED").length).toBeGreaterThanOrEqual(2);
+    expect((db.prepare("SELECT status FROM checkouts WHERE id = ?").get(checkoutId) as any).status).toBe("completed");
   });
 
   it("rejects a signature that is valid for a different order", async () => {

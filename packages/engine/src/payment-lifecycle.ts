@@ -109,6 +109,25 @@ export function onPaymentCaptured(db: Db, p: RazorpayPayment, source: EventSourc
       return;
     }
     const checkoutId = attempt.checkout_id;
+
+    // Payment truth arrives more than once by design: the Checkout.js result fetch, then the webhook, then the reconciler.
+    const known = db.prepare("SELECT role, status FROM rzp_payments WHERE razorpay_payment_id = ? AND checkout_id = ?").get(p.id, checkoutId) as
+      | { role: "primary" | "surplus"; status: string }
+      | undefined;
+    if (known && (known.role === "surplus" || known.status === "captured")) {
+      upsertRzpPayment(db, p, attempt, checkoutId, known.role, source);
+      insertLedgerRow(db, {
+        actor: source === "webhook" ? "webhook" : "reconciler",
+        action: "PAYMENT_CAPTURE_CONFIRMED",
+        checkout_id: checkoutId,
+        attempt_id: attempt.id,
+        razorpay_payment_id: p.id,
+        razorpay_order_id: p.order_id,
+        inputs: { source, role: known.role },
+      });
+      return;
+    }
+
     const checkoutRow = db.prepare("SELECT status_rank FROM checkouts WHERE id = ?").get(checkoutId) as { status_rank: number };
     const alreadyDone = checkoutRow.status_rank >= STATUS_RANK.completed || checkoutRow.status_rank === STATUS_RANK.canceled;
     const alreadyHasPrimary = hasPrimaryCaptured(db, checkoutId, p.id);
