@@ -212,8 +212,8 @@ h2{margin:8px 0}</style></head><body>${nav("onboard")}<div class="wrap">
 <p class="muted">A name, a console password and a catalog, and your shop is transactable by any AI buyer, with every money action explainable, bounded and gated by your policy. Razorpay test keys are optional: without them payments are simulated, which is enough to try the whole flow.</p>
 <form id="f" onsubmit="return submitForm(event)">
   <div class="row">
-    <div><label>Shop name</label><input id="display_name" value="Chappal &amp; Sons" required></div>
-    <div><label>Merchant id <span class="muted">(lowercase, becomes part of your URLs)</span></label><input id="merchant_id" value="chappal" pattern="[a-z0-9][a-z0-9_-]{2,31}" required></div>
+    <div><label>Shop name</label><input id="display_name" placeholder="e.g. Stride &amp; Sole Footwear" required></div>
+    <div><label>Merchant id <span class="muted">(lowercase, becomes part of your URLs)</span></label><input id="merchant_id" placeholder="e.g. stride_sole" pattern="[a-z0-9][a-z0-9_-]{2,31}" required></div>
   </div>
   <div class="row">
     <div><label>Console password</label><input id="console_password" type="password" minlength="8" required></div>
@@ -227,8 +227,8 @@ h2{margin:8px 0}</style></head><body>${nav("onboard")}<div class="wrap">
     <div><label>Ask me before any order over (₹) <span class="muted">(escalation G2)</span></label><input id="approval_rupees" type="number" min="1" value="3000"></div>
     <div><label>Catalog file <span class="muted">(or edit the JSON below)</span></label><input id="catalogFile" type="file" accept="application/json" onchange="loadFile(this)"></div>
   </div>
-  <label>Catalog JSON</label>
-  <textarea id="catalog">${JSON.stringify(template, null, 2).replace(/</g, "&lt;")}</textarea>
+  <label>Catalog JSON <span class="muted">(empty until you upload a file or paste it here; <a href="#" onclick="insertExample(); return false;">insert a small example</a> to see the shape)</span></label>
+  <textarea id="catalog" placeholder='{ "merchant": { "display_name": "Your shop" }, "products": [ ... ] }'></textarea>
   <button type="submit">Create my shop</button>
   <p id="err" class="err"></p>
 </form>
@@ -262,6 +262,8 @@ h2{margin:8px 0}</style></head><body>${nav("onboard")}<div class="wrap">
       '<pre id="' + id + '">' + esc(text) + '</pre></div>';
   }
   function copyText(id) { navigator.clipboard.writeText(document.getElementById(id).textContent); }
+  const EXAMPLE = ${JSON.stringify(JSON.stringify(template, null, 2)).replace(/</g, "\u003c")};
+  function insertExample() { document.getElementById('catalog').value = EXAMPLE; nkToast('Example catalog inserted. Replace it with your own products before creating the shop', 'warn'); }
   function download(id, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([document.getElementById(id).textContent])); a.download = name; a.click(); }
   function renderKit(d) {
     document.getElementById('f').style.display = 'none';
